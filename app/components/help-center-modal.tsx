@@ -89,25 +89,73 @@ export default function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProp
 
   const contactOptions = [
     {
-      type: "在线客服",
+      type: "微信客服",
       icon: MessageCircle,
       description: "工作日 9:00-18:00 在线支持",
       action: "开始对话",
       color: "#10b981",
-    },
-    {
-      type: "电话支持",
-      icon: Phone,
-      description: "400-123-4567",
-      action: "拨打电话",
-      color: "#3b82f6",
+      handler: () => {
+        // 检测是否为微信小程序环境
+        const isWeChatMiniProgram = typeof wx !== 'undefined' && wx.openCustomerServiceChat
+        if (isWeChatMiniProgram) {
+          // 微信小程序客服消息
+          wx.openCustomerServiceChat({
+            extInfo: { url: 'https://work.weixin.qq.com/kfid/kf_xxx' }, // 需要替换为实际的客服链接
+            corpId: 'your_corp_id', // 需要替换为实际的企业ID
+            success: () => {
+              console.log('客服对话已打开')
+            },
+            fail: (err) => {
+              console.error('打开客服失败:', err)
+              // 降级处理：复制微信号
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText('support_wechat_id')
+                alert('微信号已复制到剪贴板，请添加好友咨询')
+              }
+            }
+          })
+        } else {
+          // Web环境降级处理
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText('support_wechat_id')
+            alert('微信号已复制到剪贴板，请添加好友咨询')
+          } else {
+            alert('请添加微信号：support_wechat_id 进行咨询')
+          }
+        }
+      }
     },
     {
       type: "邮件支持",
       icon: Mail,
-      description: "support@tarot-realm.com",
+      description: "support@emotion-guide.com",
       action: "发送邮件",
       color: "#f59e0b",
+      handler: () => {
+        const email = 'support@emotion-guide.com'
+        const subject = '抽张塔罗吧 - 用户反馈'
+        const body = '请详细描述您的问题或建议：\n\n'
+        
+        const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        
+        // 检测是否为微信小程序环境
+        const isWeChatMiniProgram = typeof wx !== 'undefined' && wx.setClipboardData
+        if (isWeChatMiniProgram) {
+          // 微信小程序复制邮箱
+          wx.setClipboardData({
+            data: email,
+            success: () => {
+              wx.showToast({
+                title: '邮箱已复制',
+                icon: 'success'
+              })
+            }
+          })
+        } else {
+          // Web环境打开邮件客户端
+          window.open(mailtoLink, '_blank')
+        }
+      }
     },
   ]
 
@@ -301,6 +349,7 @@ export default function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProp
                       style={{
                         background: `linear-gradient(135deg, ${option.color} 0%, ${option.color}CC 100%)`,
                       }}
+                      onClick={option.handler}
                     >
                       {option.action}
                     </Button>

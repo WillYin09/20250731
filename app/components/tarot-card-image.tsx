@@ -18,6 +18,7 @@ interface TarotCardImageProps {
   className?: string
   style?: React.CSSProperties
   showPlaceholder?: boolean
+  onClick?: () => void
 }
 
 export default function TarotCardImage({
@@ -28,6 +29,7 @@ export default function TarotCardImage({
   className = "",
   style = {},
   showPlaceholder = true,
+  onClick,
 }: TarotCardImageProps) {
   const [imageState, setImageState] = useState<"idle" | "loading" | "loaded" | "error">("idle")
 
@@ -110,6 +112,7 @@ export default function TarotCardImage({
         height: `${height}px`,
         ...style,
       }}
+      onClick={onClick}
     >
       {/* 主要内容容器 */}
       <div

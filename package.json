@@ -5,6 +5,9 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:strict": "node scripts/dev-strict.js",
+    "dev:clean": "node scripts/dev-clean.js && next dev",
+    "dev:reset": "node scripts/dev-clean.js && pnpm install && next dev",
     "lint": "next lint",
     "start": "next start"
   },

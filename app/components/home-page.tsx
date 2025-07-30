@@ -4,15 +4,17 @@ import { useState } from "react"
 import { Sparkles, Heart, Briefcase, DollarSign, Star, ArrowRight, Crown, Calendar } from "lucide-react"
 import CardReadingPage from "./card-reading-page"
 import TarotCardImage from "./tarot-card-image"
-import ElementalBalance from "./elemental-balance"
-import UserStatsWidget from "./user-stats-widget"
 import { getTarotCard } from "../data/tarot-cards"
+import { MAJOR_ARCANA_BRIEF } from "../data/major-arcana-brief"
 import { useLunarPhase } from "../hooks/use-lunar-phase"
+import CardDetailModal from "./card-detail-modal"
+import dailyQuotes from "../data/daily_quotes.json"
 
 export default function HomePage() {
   const [selectedSpread, setSelectedSpread] = useState<number | null>(null)
   const [showReading, setShowReading] = useState(false)
   const [currentSpread, setCurrentSpread] = useState<string>("")
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const lunarPhase = useLunarPhase()
 
   const dailyCard = (() => {
@@ -28,7 +30,41 @@ export default function HomePage() {
     }
   })()
 
-  const cardSpreads = [
+  // 获取今日指引的描述文本，优先使用精简版
+  const getDailyCardDescription = () => {
+    // 优先查找精简版描述
+    const briefDescription = MAJOR_ARCANA_BRIEF[dailyCard.translation]
+    if (briefDescription) {
+      return briefDescription
+    }
+    // 如果没有精简版，则使用原始描述
+    return dailyCard.description
+  }
+
+  // 获取今日名言（每天固定，按日期hash）
+  function getTodayQuote() {
+    const today = new Date()
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
+    const startIndex = dayOfYear % dailyQuotes.length
+
+    const MAX_COMBINED_LENGTH = 35; // 名言 + "———" + 作者 的最大字符数
+
+    // 尝试从 startIndex 开始，寻找符合长度要求的名言
+    for (let i = 0; i < dailyQuotes.length; i++) {
+      const quoteIndex = (startIndex + i) % dailyQuotes.length;
+      const currentQuote = dailyQuotes[quoteIndex];
+      const combinedText = `${currentQuote.quote}——${currentQuote.author}`;
+      if (combinedText.length <= MAX_COMBINED_LENGTH) {
+        return currentQuote;
+      }
+    }
+
+    // 如果所有名言都过长，则回退到原始的每日名言
+    return dailyQuotes[startIndex];
+  }
+  const todayQuote = getTodayQuote()
+
+  const allCardSpreads = [
     {
       id: 1,
       name: "三牌阵",
@@ -37,6 +73,7 @@ export default function HomePage() {
       color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
       cards: 3,
       difficulty: "入门",
+      isRecommended: true,
     },
     {
       id: 2,
@@ -46,6 +83,7 @@ export default function HomePage() {
       color: "bg-gradient-to-r from-pink-400 to-rose-500",
       cards: 5,
       difficulty: "进阶",
+      isRecommended: true,
     },
     {
       id: 3,
@@ -55,6 +93,7 @@ export default function HomePage() {
       color: "bg-gradient-to-r from-blue-400 to-blue-600",
       cards: 4,
       difficulty: "进阶",
+      isRecommended: true,
     },
     {
       id: 4,
@@ -64,6 +103,7 @@ export default function HomePage() {
       color: "bg-gradient-to-r from-green-400 to-emerald-500",
       cards: 3,
       difficulty: "入门",
+      isRecommended: true,
     },
     {
       id: 5,
@@ -73,12 +113,13 @@ export default function HomePage() {
       color: "bg-gradient-to-r from-yellow-500 to-orange-500",
       cards: 10,
       difficulty: "专家",
+      isRecommended: false,
     },
   ]
 
   const handleSpreadClick = (spreadId: number) => {
     console.log("Spread clicked:", spreadId)
-    const spread = cardSpreads.find((s) => s.id === spreadId)
+    const spread = allCardSpreads.find((s) => s.id === spreadId)
     if (spread) {
       console.log("Starting reading for:", spread.name)
       setCurrentSpread(spread.name)
@@ -130,11 +171,13 @@ export default function HomePage() {
   return (
     <div style={{ paddingBottom: "120px", minHeight: "100vh", overflowY: "auto" }}>
       {/* Welcome Section - 移动端优化 */}
-      <div style={{ textAlign: "center", padding: "16px 0" }}>
+      <div style={{ textAlign: "center", padding: "16px 0 0 0" }}>
         <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>抽张塔罗吧</h1>
-        <p style={{ color: "#D4AF37", fontSize: "16px" }}>探索内心深处的智慧与指引</p>
+        <div style={{ fontStyle: "italic", color: "#D4AF37", fontSize: "13px", lineHeight: 1.4, maxWidth: 320, margin: "0 auto 8px auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+          {todayQuote.quote}
+        </div>
       </div>
-
+      
       {/* 日期和月相信息 - 移动端优化 */}
       <div
         style={{
@@ -215,96 +258,100 @@ export default function HomePage() {
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: "16px",
               position: "relative",
               zIndex: 1,
             }}
           >
-            <div style={{ position: "relative", marginBottom: "20px" }}>
-              {/* Card glow effect */}
-              <div
-                style={{
-                  position: "absolute",
-                  inset: "-6px",
-                  background: "linear-gradient(45deg, #FFD70040, #B8860B40, #FFA50040, #FFD70040)",
-                  borderRadius: "14px",
-                  filter: "blur(6px)",
-                  animation: "cardGlow 3s ease-in-out infinite alternate",
-                }}
-              />
-              <TarotCardImage
-                card={dailyCard}
-                isRevealed={true}
-                width={120}
-                height={180}
-                className="shadow-xl"
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                  filter: "drop-shadow(0 4px 20px rgba(255, 215, 0, 0.3))",
-                }}
-              />
-              {/* Sparkle effects */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "-8px",
-                  right: "-8px",
-                  fontSize: "14px",
-                  animation: "sparkle 2s ease-in-out infinite",
-                }}
-              >
-                ✨
+            {/* 左侧：卡牌图片和名称 */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+              {/* 卡牌图片 */}
+              <div style={{ position: "relative", marginBottom: "8px" }}>
+                {/* Card glow effect */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: "-6px",
+                    background: "linear-gradient(45deg, #FFD70040, #B8860B40, #FFA50040, #FFD70040)",
+                    borderRadius: "14px",
+                    filter: "blur(6px)",
+                    animation: "cardGlow 3s ease-in-out infinite alternate",
+                  }}
+                />
+                <TarotCardImage
+                  card={dailyCard}
+                  isRevealed={true}
+                  width={80}
+                  height={120}
+                  className="shadow-xl"
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    filter: "drop-shadow(0 4px 20px rgba(255, 215, 0, 0.3))",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setShowDetailModal(true)}
+                />
+                {/* Sparkle effects */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-6px",
+                    right: "-6px",
+                    fontSize: "12px",
+                    animation: "sparkle 2s ease-in-out infinite",
+                  }}
+                >
+                  ✨
+                </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-6px",
+                    left: "-6px",
+                    fontSize: "8px",
+                    animation: "sparkle 2s ease-in-out infinite 1s",
+                  }}
+                >
+                  ⭐
+                </div>
               </div>
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "-8px",
-                  left: "-8px",
-                  fontSize: "10px",
-                  animation: "sparkle 2s ease-in-out infinite 1s",
-                }}
-              >
-                ⭐
-              </div>
-            </div>
-
-            <div style={{ textAlign: "center", maxWidth: "100%" }}>
-              <h3 style={{ fontSize: "22px", fontWeight: "600", color: "#F5F5DC", marginBottom: "12px" }}>
+              
+              {/* 卡牌名称 - 直接放在卡牌下方 */}
+              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F5F5DC", margin: 0, textAlign: "center" }}>
                 {dailyCard.translation}
               </h3>
-              <p style={{ color: "#FFD700", fontWeight: "500", fontSize: "18px", marginBottom: "16px" }}>
-                {dailyCard.meaning}
-              </p>
+            </div>
+
+            {/* 右侧：文字内容 */}
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
               <p
                 style={{
                   color: "#D4AF37",
-                  lineHeight: "1.7",
-                  fontSize: "14px",
-                  textAlign: "justify",
-                  maxHeight: "none",
-                  overflow: "visible",
+                  lineHeight: "1.6",
+                  fontSize: "13px",
+                  textAlign: "left",
+                  marginTop: "0",
                 }}
               >
-                {dailyCard.description}
+                {getDailyCardDescription()}
               </p>
             </div>
           </div>
-        </div>
-
-        {/* 元素平衡和核心数据 - 移动端水平布局，确保宽度一致 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
-          <ElementalBalance />
-          <UserStatsWidget />
         </div>
       </div>
 
       {/* Card Spreads - 移动端优化 */}
       <div style={{ padding: "20px 16px 0" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#FFD700", marginBottom: "16px" }}>选择牌阵</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#FFD700", margin: 0 }}>
+            推荐牌阵
+          </h2>
+        </div>
 
-        {cardSpreads.map((spread) => (
+        {allCardSpreads.map((spread) => (
           <div
             key={spread.id}
             onClick={() => handleSpreadClick(spread.id)}
@@ -378,6 +425,15 @@ export default function HomePage() {
           </div>
         ))}
       </div>
+
+      {/* 卡牌详情弹窗 */}
+      <CardDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        card={dailyCard}
+        cardStats={null}
+        isDailyGuidance={true}
+      />
 
       <style jsx>{`
         @keyframes rotate {

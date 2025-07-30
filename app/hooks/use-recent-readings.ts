@@ -77,7 +77,7 @@ export function useRecentReadings() {
         color: "bg-orange-100 text-orange-700",
         cards: [
           { name: "Five of Pentacles", translation: "星币五", position: "收入", meaning: "财务困难", reversed: false },
-          { name: "The Devil", translation: "魔鬼", position: "支出", meaning: "物质束缚", reversed: false },
+          { name: "The Devil", translation: "诱惑", position: "支出", meaning: "物质束缚", reversed: false },
           { name: "The Fool", translation: "愚人", position: "建议", meaning: "新的开始", reversed: false },
         ],
         summary: "财务方面需要谨慎管理，避免不必要的支出，寻找新的收入来源。",
@@ -90,8 +90,8 @@ export function useRecentReadings() {
         result: "深刻",
         color: "bg-purple-100 text-purple-700",
         cards: [
-          { name: "Death", translation: "死神", position: "过去", meaning: "转变结束", reversed: false },
-          { name: "The Tower", translation: "高塔", position: "现在", meaning: "突然变化", reversed: false },
+              { name: "Death", translation: "转变", position: "过去", meaning: "转变结束", reversed: false },
+    { name: "The Tower", translation: "变革", position: "现在", meaning: "突然变化", reversed: false },
           { name: "The Star", translation: "星星", position: "未来", meaning: "希望重生", reversed: false },
         ],
         summary: "经历了重大的人生转变，虽然过程艰难，但最终会迎来新的希望和机会。",

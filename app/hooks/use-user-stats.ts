@@ -53,7 +53,7 @@ export function useUserStats() {
       "The Hanged Man": "water",
       Death: "water",
       Temperance: "fire",
-      "The Devil": "earth",
+      "The Devil": "earth", // 诱惑牌对应土元素
       "The Tower": "fire",
       "The Star": "air",
       "The Moon": "water",

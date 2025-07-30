@@ -50,7 +50,7 @@ function TarotApp() {
   const tabs = [
     { id: "home", label: "首页", icon: Home },
     { id: "favorites", label: "收藏", icon: Heart },
-    { id: "community", label: "社区", icon: Users },
+    { id: "community", label: "经验", icon: Users },
     { id: "profile", label: "我的", icon: User },
   ]
 

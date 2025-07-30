@@ -39,11 +39,9 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([
     {
       id: 1,
-      user: { name: "神秘指引师", avatar: "🔮", level: "大师", verified: true },
-      content: "今天抽到了愚者牌，感觉是新开始的征兆！分享给大家一些愚者牌的深层含义...",
-      fullContent: `今天抽到了愚者牌，感觉是新开始的征兆！分享给大家一些愚者牌的深层含义。
-
-愚者牌代表着纯真、新的开始和无限的可能性。当这张牌出现时，通常意味着：
+      user: { name: "精选内容", avatar: "🔮", level: "牌意解读", verified: true },
+      content: "愚者牌的深层含义：代表纯真、新的开始和无限的可能性。当这张牌出现时，通常意味着新的旅程即将开始...",
+      fullContent: `愚者牌的深层含义：代表纯真、新的开始和无限的可能性。当这张牌出现时，通常意味着新的旅程即将开始。
 
 🌟 **正位含义**：
 - 新的旅程即将开始
@@ -56,22 +54,20 @@ export default function CommunityPage() {
 - 需要更多的准备和思考
 - 避免盲目的冒险
 
-在我的解读中，愚者牌提醒我们要保持初心，像孩子一样对世界充满好奇。即使前路未卜，也要相信自己的内在智慧。
-
-大家有遇到过愚者牌吗？欢迎分享你们的体验！`,
+愚者牌提醒我们要保持初心，像孩子一样对世界充满好奇。即使前路未卜，也要相信自己的内在智慧。`,
       image: true,
       likes: 24,
       comments: 8,
-      time: "2小时前",
-      tags: ["愚者牌", "新开始"],
+      time: "精选",
+      tags: ["愚者牌", "牌意解读"],
       isLiked: false,
       shareCount: 5,
     },
     {
       id: 2,
-      user: { name: "星座少女", avatar: "⭐", level: "进阶", verified: false },
-      content: "分享一个三牌阵的解读技巧：过去-现在-未来要结合起来看，形成完整的故事线",
-      fullContent: `分享一个三牌阵的解读技巧：过去-现在-未来要结合起来看，形成完整的故事线。
+      user: { name: "指引技巧", avatar: "⭐", level: "解读方法", verified: false },
+      content: "三牌阵解读技巧：过去-现在-未来要结合起来看，形成完整的故事线。很多新手会单独分析每张牌...",
+      fullContent: `三牌阵解读技巧：过去-现在-未来要结合起来看，形成完整的故事线。
 
 很多新手在解读三牌阵时，会单独分析每张牌的含义，但其实最重要的是要把三张牌连接起来，形成一个完整的故事。
 
@@ -88,36 +84,35 @@ export default function CommunityPage() {
 
 💡 **实例分析**：
 假设抽到：过去-高塔，现在-星星，未来-太阳
-故事线：经历了突然的变化和破坏（高塔），现在正在重新找到希望和方向（星星），未来将迎来光明和成功（太阳）。
-
-这样的解读是不是更有意义呢？大家试试看！`,
+故事线：经历了突然的变化和破坏（高塔），现在正在重新找到希望和方向（星星），未来将迎来光明和成功（太阳）。`,
       likes: 56,
       comments: 12,
-      time: "4小时前",
+      time: "精选",
       tags: ["三牌阵", "解读技巧"],
       isLiked: true,
       shareCount: 12,
     },
     {
       id: 3,
-      user: { name: "卡牌新手", avatar: "🌙", level: "初学", verified: false },
-content: "第一次指引就抽到了死神牌，有点紧张...请问这代表什么意思呢？",
-      fullContent: `第一次指引就抽到了死神牌，有点紧张...请问这代表什么意思呢？
+      user: { name: "新手指南", avatar: "🌙", level: "基础知识", verified: false },
+      content: "转变牌的含义解析：转变牌不是真的结束，而是代表转变和转化。这张牌提醒我们...",
+      fullContent: `转变牌的含义解析：转变牌不是真的结束，而是代表转变和转化。这张牌提醒我们：
 
-刚开始学习卡牌，今天鼓起勇气做了第一次指引，问的是关于工作的问题，结果抽到了死神牌。看到这张牌的时候心里咯噔一下，是不是代表什么不好的事情要发生？
+🔄 **核心含义**：
+- 结束与开始：一个阶段的结束，新阶段的开始
+- 转变与转化：内在的成长和外在的变化
+- 释放与重生：放下旧有的束缚，迎接新的可能
 
-我在网上查了一些资料，有人说死神牌不是真的死亡，而是代表转变，但还是有点担心。
+💡 **解读要点**：
+- 不要被表面的"结束"吓到
+- 关注转变带来的积极影响
+- 理解变化是成长的必经之路
 
-想请教一下各位老师：
-- 死神牌在工作方面通常代表什么？
-- 我应该如何理解这张牌的含义？
-- 作为新手，我在解读时需要注意什么？
-
-谢谢大家的指导！🙏`,
+转变牌教导我们，变化虽然令人不安，但却是生命进化的自然过程。`,
       likes: 18,
       comments: 15,
-      time: "6小时前",
-      tags: ["死神牌", "求助"],
+      time: "精选",
+      tags: ["转变牌", "新手指南"],
       isLiked: false,
       shareCount: 3,
     },
@@ -217,10 +212,10 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
         <div className="flex items-center justify-between pt-4 px-4">
           <div>
             <h1 className="serif-font text-xl font-bold" style={{ color: "#F5F5DC" }}>
-              卡牌社区
+              经验分享
             </h1>
             <p className="text-sm" style={{ color: "#D4AF37" }}>
-              与同好分享指引心得
+              精选卡牌知识与指引心得
             </p>
           </div>
           <Button
@@ -229,9 +224,34 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
               background: "linear-gradient(135deg, #FFD700 0%, #B8860B 100%)",
               boxShadow: "0 4px 15px rgba(255, 215, 0, 0.3)",
             }}
+            onClick={() => {
+              // 检测是否为微信小程序环境
+              const isWeChatMiniProgram = typeof wx !== 'undefined' && wx.shareAppMessage
+              
+              if (isWeChatMiniProgram) {
+                // 微信小程序环境
+                wx.shareAppMessage({
+                  title: '我在抽张塔罗吧获得了指引',
+                  path: '/pages/index/index'
+                })
+              } else {
+                // Web环境下的分享逻辑
+                if (navigator.share) {
+                  navigator.share({
+                    title: '抽张塔罗吧 - 经验分享',
+                    text: '我在抽张塔罗吧获得了指引，推荐给你！',
+                    url: window.location.href
+                  })
+                } else {
+                  // 复制链接到剪贴板
+                  navigator.clipboard.writeText(window.location.href)
+                  alert('链接已复制到剪贴板')
+                }
+              }
+            }}
           >
-            <Plus className="w-4 h-4 mr-1" />
-            发布
+            <Share2 className="w-4 h-4 mr-1" />
+            分享
           </Button>
         </div>
 
@@ -274,7 +294,7 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
                   </div>
                   <div className="flex items-center gap-1 text-xs" style={{ color: "#D4AF37" }}>
                     <Users className="w-3 h-3" />
-                    {topic.count.toLocaleString()} 参与
+                    {topic.count.toLocaleString()} 阅读
                   </div>
                 </div>
               </Card>
@@ -398,14 +418,14 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
                     }}
                   >
                     <Heart className={`w-4 h-4 mr-1 ${post.isLiked ? "fill-current" : ""}`} />
-                    {post.likes}
+                    收藏
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="p-0 text-sm hover:bg-transparent"
                     style={{ color: "#D4AF37" }}
-                    onClick={() => setCommentModalPost(post)}
+                    onClick={() => setSelectedPost(post)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = "#3b82f6"
                     }}
@@ -414,7 +434,7 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
                     }}
                   >
                     <MessageCircle className="w-4 h-4 mr-1" />
-                    {post.comments}
+                    详情
                   </Button>
                   <Button
                     variant="ghost"
@@ -430,7 +450,7 @@ content: "第一次指引就抽到了死神牌，有点紧张...请问这代表�
                     }}
                   >
                     <Share2 className="w-4 h-4 mr-1" />
-                    {post.shareCount || 0}
+                    分享
                   </Button>
                 </div>
               </div>

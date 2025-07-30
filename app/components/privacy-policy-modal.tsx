@@ -181,9 +181,9 @@ export default function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyMod
                 如果您对本隐私政策有任何疑问或需要行使您的权利，请通过以下方式联系我们：
               </p>
               <div className="mt-3 space-y-1 text-sm" style={{ color: "#D4AF37" }}>
-                <p>邮箱：privacy@tarot-realm.com</p>
-                <p>电话：400-123-4567</p>
-                <p>地址：北京市朝阳区神秘大厦108室</p>
+                <p>邮箱：support@emotion-guide.com</p>
+                <p>电话：400-888-9999</p>
+                <p>地址：北京市朝阳区科技园区创新大厦A座</p>
               </div>
             </div>
 
