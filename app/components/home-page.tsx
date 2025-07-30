@@ -340,6 +340,54 @@ export default function HomePage() {
               </p>
             </div>
           </div>
+          {/* 新增主操作按钮：立即抽卡 */}
+          <div style={{ display: "flex", justifyContent: "center", margin: "16px 0 0 0", position: "relative" }}>
+            {/* 呼吸灯光晕 */}
+            <div style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "220px",
+              height: "60px",
+              borderRadius: "30px",
+              background: "radial-gradient(circle, #FFD70080 0%, #FFEA7080 60%, transparent 100%)",
+              filter: "blur(8px)",
+              zIndex: 1,
+              pointerEvents: "none",
+              animation: "breath-glow 2.8s ease-in-out infinite"
+            }} />
+            <button
+              onClick={() => handleSpreadClick(1)}
+              style={{
+                padding: "0 36px",
+                height: "48px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#333",
+                background: "linear-gradient(90deg, #FFD700 0%, #FFEA70 100%)",
+                border: "none",
+                borderRadius: "24px",
+                boxShadow: "0 4px 16px rgba(255,215,0,0.18)",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s, transform 0.2s",
+                outline: "none",
+                position: "relative",
+                zIndex: 2,
+                letterSpacing: "2px",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = "0 0 24px 6px #FFD70080"
+                e.currentTarget.style.transform = "scale(1.04)"
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,215,0,0.18)"
+                e.currentTarget.style.transform = "scale(1)"
+              }}
+            >
+              ✦ 立即抽卡
+            </button>
+          </div>
         </div>
       </div>
 
@@ -435,22 +483,25 @@ export default function HomePage() {
         isDailyGuidance={true}
       />
 
+      {/* 页面底部唯一 <style jsx>，合并 breath-glow 动画 */}
       <style jsx>{`
         @keyframes rotate {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        
         @keyframes cardGlow {
           0% { opacity: 0.6; transform: scale(1); }
           100% { opacity: 0.8; transform: scale(1.02); }
         }
-        
         @keyframes sparkle {
           0%, 100% { opacity: 0; transform: scale(0.8) rotate(0deg); }
           50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
         }
-
+        @keyframes breath-glow {
+          0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+          100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+        }
         /* 移动端媒体查询 */
         @media (max-width: 768px) {
           .touch-target {

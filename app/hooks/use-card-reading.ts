@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useRef } from "react"
 import { getRandomTarotCards, getCardMeaning, type TarotCardData } from "../data/tarot-cards"
 import { getSpreadLayout } from "../data/spread-layouts"
 import { callDeepSeekAPI } from "../services/deepseek-api"
-import { generateConciseSummary } from "../utils/text-processing"
+import { getBriefCardMeaning, generateConciseSummary } from "../utils/text-processing"
 
 export interface FlyingCard {
   id: number
@@ -278,7 +278,7 @@ ${cardsToUse
 
   // 生成精炼的收藏摘要
   const generateFavoriteSummary = useCallback(() => {
-    return generateConciseSummary(state.comprehensiveSummary, 150)
+    return generateConciseSummary(state.comprehensiveSummary, 350)
   }, [state.comprehensiveSummary])
 
   // 安全的卡牌选择处理，防止快速点击

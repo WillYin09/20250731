@@ -2,6 +2,9 @@
  * 文本处理工具函数
  */
 
+import { MAJOR_ARCANA_BRIEF } from "../data/major-arcana-brief"
+import { MINOR_ARCANA_BRIEF } from "../data/minor-arcana-brief"
+
 // 处理文本内容，清理格式
 export function processTextContent(text: string): string {
   if (!text) return ""
@@ -33,26 +36,33 @@ export function cleanMarkdownFormatting(text: string): string {
     .trim()
 }
 
-// 生成精炼摘要
-export function generateConciseSummary(fullText: string, maxLength = 200): string {
+// 生成精炼摘要（优化：优先整体解读，按句截断，最大350字）
+export function generateConciseSummary(fullText: string, maxLength = 350): string {
   if (!fullText) return ""
-
-  // 清理格式
   const cleaned = cleanMarkdownFormatting(fullText)
-
-  // 按段落分割
-  const paragraphs = cleaned.split("\n").filter((p) => p.trim().length > 0)
-
-  // 提取关键段落
-  const keyParagraphs = paragraphs.slice(0, 3) // 取前3段
-
-  let summary = keyParagraphs.join(" ")
-
-  // 如果超过长度限制，截断并添加省略号
-  if (summary.length > maxLength) {
-    summary = summary.substring(0, maxLength - 3) + "..."
+  // 优先提取“整体解读”部分
+  let main = ""
+  const overallMatch = cleaned.match(/整体解读([\s\S]*?)(深度分析|行动建议|祝福与展望|$)/)
+  if (overallMatch) {
+    main = overallMatch[1].trim()
+  } else {
+    // 兜底：取前2段
+    main = cleaned.split("\n").filter(Boolean).slice(0, 2).join(" ")
   }
-
+  // 按句截断
+  let summary = ""
+  let total = 0
+  main.split(/[。！？]/).forEach(sentence => {
+    if (sentence.trim() && total < maxLength) {
+      const s = sentence.trim() + "。"
+      if (total + s.length <= maxLength) {
+        summary += s
+        total += s.length
+      }
+    }
+  })
+  if (!summary) summary = main.slice(0, maxLength)
+  if (summary.length > maxLength) summary = summary.slice(0, maxLength) + "..."
   return summary
 }
 
@@ -161,4 +171,14 @@ export function processAIReadingContent(content: string): string {
     .replace(/\s*指导建议\s*[:：]\s*/g, "指导建议：") // 统一建议格式
 
   return processed.trim()
+}
+
+// 获取卡牌简明解释（优先大阿卡纳/小阿卡纳简明库，否则normal首句）
+export function getBriefCardMeaning(card: { translation: string, normal?: string }): string {
+  if (MAJOR_ARCANA_BRIEF[card.translation]) return MAJOR_ARCANA_BRIEF[card.translation]
+  if (MINOR_ARCANA_BRIEF[card.translation]) return MINOR_ARCANA_BRIEF[card.translation]
+  const normal = card.normal || ""
+  let brief = normal.split("，")[0] || normal.split(",")[0] || normal
+  if (brief.length > 30) brief = brief.slice(0, 30) + "..."
+  return brief
 }
