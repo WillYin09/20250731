@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useCardCollection } from "./use-card-collection"
 import { TAROT_CARDS } from "../data/tarot-cards"
+import { storageUtils, STORAGE_KEYS } from "../utils/storage-adapter"
 
 export interface UserStats {
   totalDraws: number
@@ -67,16 +68,7 @@ export function useUserStats() {
   // 计算统计数据
   const calculateStats = useCallback(() => {
     const today = new Date().toDateString()
-    const savedStats = localStorage.getItem("tarot-user-stats")
-    let currentStats = stats
-
-    if (savedStats) {
-      try {
-        currentStats = JSON.parse(savedStats)
-      } catch (error) {
-        console.error("Failed to parse user stats:", error)
-      }
-    }
+    const currentStats = storageUtils.getJSON<UserStats>(STORAGE_KEYS.USER_STATS, stats)
 
     // 计算连续登录天数
     const lastLogin = new Date(currentStats.lastLoginDate)
@@ -141,7 +133,7 @@ export function useUserStats() {
     }
 
     setStats(newStats)
-    localStorage.setItem("tarot-user-stats", JSON.stringify(newStats))
+    storageUtils.setJSON(STORAGE_KEYS.USER_STATS, newStats)
   }, [collection, stats])
 
   useEffect(() => {

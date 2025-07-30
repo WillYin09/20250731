@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { storageUtils, STORAGE_KEYS } from "../utils/storage-adapter"
 
 export interface SavedReading {
   id: string
@@ -21,30 +22,18 @@ export function useFavorites() {
   const [favorites, setFavorites] = useState<SavedReading[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // 从localStorage加载收藏数据
+  // 从存储加载收藏数据
   useEffect(() => {
-    const saved = localStorage.getItem("tarot-favorites")
-    if (saved) {
-      try {
-        const parsedFavorites = JSON.parse(saved)
-        console.log("Loaded favorites from localStorage:", parsedFavorites.length)
-        setFavorites(parsedFavorites)
-      } catch (error) {
-        console.error("Failed to load favorites:", error)
-        setFavorites([])
-      }
-    }
+    const parsedFavorites = storageUtils.getJSON<SavedReading[]>(STORAGE_KEYS.FAVORITES, [])
+    console.log("Loaded favorites from storage:", parsedFavorites.length)
+    setFavorites(parsedFavorites)
     setIsLoading(false)
   }, [])
 
-  // 保存到localStorage的辅助函数
+  // 保存到存储的辅助函数
   const saveFavoritesToStorage = useCallback((newFavorites: SavedReading[]) => {
-    try {
-      localStorage.setItem("tarot-favorites", JSON.stringify(newFavorites))
-      console.log("Saved favorites to localStorage:", newFavorites.length)
-    } catch (error) {
-      console.error("Failed to save favorites to localStorage:", error)
-    }
+    storageUtils.setJSON(STORAGE_KEYS.FAVORITES, newFavorites)
+    console.log("Saved favorites to storage:", newFavorites.length)
   }, [])
 
   // 添加收藏

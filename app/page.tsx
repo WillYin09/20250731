@@ -7,6 +7,7 @@ import FavoritesPage from "./components/favorites-page"
 import CommunityPage from "./components/community-page"
 import ProfilePage from "./components/profile-page"
 import { AudioProvider, useAudio } from "./components/audio-manager"
+import AutoMigrationDetector from "./components/auto-migration-detector"
 
 function MusicControls() {
   const { isPlaying, toggleMusic, volume, setVolume } = useAudio()
@@ -94,6 +95,9 @@ function TarotApp() {
 
       {/* Main Content */}
       <div style={{ paddingTop: "44px", paddingBottom: "80px", minHeight: "100vh" }}>{renderContent()}</div>
+      
+      {/* Auto Migration Detector */}
+      <AutoMigrationDetector />
 
       {/* Bottom Navigation */}
       <div

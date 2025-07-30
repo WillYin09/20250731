@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { X, Settings, Bell, Volume2, Moon, Smartphone, Globe, Shield, Trash2 } from "lucide-react"
+import { X, Settings, Bell, Volume2, Moon, Smartphone, Globe, Shield, Trash2, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import DataMigrationModal from "./data-migration-modal"
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -21,6 +22,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     dataSync: true,
     analytics: false,
   })
+  const [showDataMigration, setShowDataMigration] = useState(false)
 
   if (!isOpen) return null
 
@@ -107,6 +109,19 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         },
       ],
     },
+    {
+      title: "数据管理",
+      icon: Database,
+      items: [
+        {
+          key: "dataManagement",
+          label: "数据管理",
+          description: "备份、恢复和迁移数据",
+          value: false,
+          isButton: true,
+        },
+      ],
+    },
   ]
 
   return (
@@ -183,11 +198,26 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           {item.description}
                         </div>
                       </div>
-                      <Switch
-                        checked={item.value}
-                        onCheckedChange={(checked) => handleSettingChange(item.key, checked)}
-                        className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-yellow-400 data-[state=checked]:to-yellow-600"
-                      />
+                      {item.isButton ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowDataMigration(true)}
+                          style={{
+                            color: "#FFD700",
+                            borderColor: "rgba(255, 215, 0, 0.3)",
+                            backgroundColor: "rgba(255, 215, 0, 0.1)"
+                          }}
+                        >
+                          管理
+                        </Button>
+                      ) : (
+                        <Switch
+                          checked={item.value}
+                          onCheckedChange={(checked) => handleSettingChange(item.key, checked)}
+                          className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-yellow-400 data-[state=checked]:to-yellow-600"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -211,6 +241,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
       </div>
+      
+      {/* Data Migration Modal */}
+      <DataMigrationModal
+        isOpen={showDataMigration}
+        onClose={() => setShowDataMigration(false)}
+      />
     </div>
   )
 }

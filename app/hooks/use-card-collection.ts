@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { TAROT_CARDS } from "../data/tarot-cards"
+import { storageUtils, STORAGE_KEYS } from "../utils/storage-adapter"
 
 export interface CardEncounter {
   date: string
@@ -29,22 +30,16 @@ export function useCardCollection() {
   const [collection, setCollection] = useState<CardCollection>({})
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([])
 
-  // 从localStorage加载收藏数据
+  // 从存储加载收藏数据
   useEffect(() => {
-    const saved = localStorage.getItem("tarot-card-collection")
-    if (saved) {
-      try {
-        setCollection(JSON.parse(saved))
-      } catch (error) {
-        console.error("Failed to load card collection:", error)
-      }
-    }
+    const savedCollection = storageUtils.getJSON<CardCollection>(STORAGE_KEYS.CARD_COLLECTION, {})
+    setCollection(savedCollection)
   }, [])
 
-  // 保存到localStorage
+  // 保存到存储
   const saveCollection = (newCollection: CardCollection) => {
     setCollection(newCollection)
-    localStorage.setItem("tarot-card-collection", JSON.stringify(newCollection))
+    storageUtils.setJSON(STORAGE_KEYS.CARD_COLLECTION, newCollection)
   }
 
   // 记录卡牌遭遇
