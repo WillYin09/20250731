@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #ffd700; /* 天体金 */
+  --secondary: #b8860b; /* 古铜金 */
+  --accent: #ffa500; /* 橙金色 */
+  --background: #1a237e; /* 深靛蓝色 */
+  --card: #36454f; /* 炭灰色 */
+  --text-primary: #f5f5dc; /* 米白色 */
+  --text-secondary: #d4af37; /* 淡金色 */
+  --border: #4a5568; /* 深灰边框 */
+
+  /* Dark mode colors */
+  --dark-bg: #003366; /* 午夜蓝 */
+  --dark-card: #2d3748;
+  --dark-text: #f5f5dc;
+  --dark-text-secondary: #d4af37;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans), sans-serif;
+  background: linear-gradient(135deg, #1a237e 0%, #003366 50%, #1a237e 100%);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  min-height: 100vh;
+}
+
+.serif-font {
+  font-family: var(--font-serif), serif;
+}
+
+.breathing-animation {
+  animation: breathing 3s ease-in-out infinite;
+}
+
+@keyframes breathing {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.card-flip {
+  perspective: 1000px;
+}
+
+.card-flip-inner {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card-flip.flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple-effect:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+.glow-effect {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-effect:hover {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
+
+.geometric-pattern {
+  background: linear-gradient(
+    135deg,
+    transparent 25%,
+    rgba(255, 215, 0, 0.1) 25%,
+    rgba(255, 215, 0, 0.1) 50%,
+    transparent 50%,
+    transparent 75%,
+    rgba(255, 215, 0, 0.1) 75%
+  );
+  background-size: 20px 20px;
+}
+
+/* iPhone 14 Pro Max specific optimizations */
+@media screen and (width: 430px) and (height: 932px) {
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 44px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 34px);
+  }
+
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Enhanced safe area support */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Optimized for high DPR displays */
+@media (-webkit-min-device-pixel-ratio: 3) {
+  .glow-effect {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.25);
+  }
+
+  .glow-effect:hover {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+  }
+}
+
+/* Card flip animation enhancements */
+.card-flip {
+  perspective: 1000px;
+}
+
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.card-flip.flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 0.75rem;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Fade in animation */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card selection animation */
+.card-select-animation {
+  animation: cardSelect 0.6s ease-out;
+}
+
+@keyframes cardSelect {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1.05) rotate(0deg);
+  }
+}
+
+/* Deck spread animation */
+.deck-spread {
+  animation: deckSpread 1s ease-out;
+}
+
+@keyframes deckSpread {
+  from {
+    transform: translateY(20px) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 音乐控制动画 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 音乐播放指示器 */
+.music-playing-indicator {
+  animation: pulse 2s infinite;
+}
+
+/* 音量控制悬停效果 */
+.volume-control:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* 星空背景效果 */
+.starry-background {
+  background: linear-gradient(135deg, #1a237e 0%, #003366 50%, #1a237e 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.starry-background::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(2px 2px at 20px 30px, rgba(255, 215, 0, 0.8), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 215, 0, 0.6), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 215, 0, 0.9), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 215, 0, 0.4), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(255, 215, 0, 0.7), transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  opacity: 0.3;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
