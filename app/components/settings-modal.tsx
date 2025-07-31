@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { X, Settings, Bell, Volume2, Moon, Smartphone, Globe, Shield, Trash2, Database } from "lucide-react"
+import { X, Settings, Volume2, Database, Shield, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import DataMigrationModal from "./data-migration-modal"
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -13,16 +12,9 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [settings, setSettings] = useState({
-    notifications: true,
     soundEffects: true,
-    backgroundMusic: false,
-    darkMode: true,
-    vibration: true,
     autoSave: true,
-    dataSync: true,
-    analytics: false,
   })
-  const [showDataMigration, setShowDataMigration] = useState(false)
 
   if (!isOpen) return null
 
@@ -31,18 +23,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }
 
   const settingsSections = [
-    {
-      title: "通知设置",
-      icon: Bell,
-      items: [
-        {
-          key: "notifications",
-          label: "推送通知",
-          description: "接收指引提醒和社区消息",
-          value: settings.notifications,
-        },
-      ],
-    },
     {
       title: "音效设置",
       icon: Volume2,
@@ -53,72 +33,17 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           description: "卡牌翻转和选择音效",
           value: settings.soundEffects,
         },
-        {
-          key: "backgroundMusic",
-          label: "背景音乐",
-          description: "指引时播放背景音乐",
-          value: settings.backgroundMusic,
-        },
       ],
     },
     {
-      title: "显示设置",
-      icon: Moon,
+      title: "数据设置",
+      icon: Database,
       items: [
-        {
-          key: "darkMode",
-          label: "深色模式",
-          description: "使用深色主题界面",
-          value: settings.darkMode,
-        },
-      ],
-    },
-    {
-      title: "设备设置",
-      icon: Smartphone,
-      items: [
-        {
-          key: "vibration",
-          label: "震动反馈",
-          description: "触摸时提供震动反馈",
-          value: settings.vibration,
-        },
         {
           key: "autoSave",
           label: "自动保存",
           description: "自动保存指引记录",
           value: settings.autoSave,
-        },
-      ],
-    },
-    {
-      title: "数据设置",
-      icon: Globe,
-      items: [
-        {
-          key: "dataSync",
-          label: "数据同步",
-          description: "在设备间同步指引数据",
-          value: settings.dataSync,
-        },
-        {
-          key: "analytics",
-          label: "数据分析",
-          description: "帮助改进应用体验",
-          value: settings.analytics,
-        },
-      ],
-    },
-    {
-      title: "数据管理",
-      icon: Database,
-      items: [
-        {
-          key: "dataManagement",
-          label: "数据管理",
-          description: "备份、恢复和迁移数据",
-          value: false,
-          isButton: true,
         },
       ],
     },
@@ -198,26 +123,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           {item.description}
                         </div>
                       </div>
-                      {item.isButton ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setShowDataMigration(true)}
-                          style={{
-                            color: "#FFD700",
-                            borderColor: "rgba(255, 215, 0, 0.3)",
-                            backgroundColor: "rgba(255, 215, 0, 0.1)"
-                          }}
-                        >
-                          管理
-                        </Button>
-                      ) : (
-                        <Switch
-                          checked={item.value}
-                          onCheckedChange={(checked) => handleSettingChange(item.key, checked)}
-                          className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-yellow-400 data-[state=checked]:to-yellow-600"
-                        />
-                      )}
+                      <Switch
+                        checked={item.value}
+                        onCheckedChange={(checked) => handleSettingChange(item.key, checked)}
+                        className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-yellow-400 data-[state=checked]:to-yellow-600"
+                      />
                     </div>
                   ))}
                 </div>
@@ -241,12 +151,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
       </div>
-      
-      {/* Data Migration Modal */}
-      <DataMigrationModal
-        isOpen={showDataMigration}
-        onClose={() => setShowDataMigration(false)}
-      />
     </div>
   )
 }

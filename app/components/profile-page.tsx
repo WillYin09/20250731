@@ -100,13 +100,6 @@ export default function ProfilePage({ onNavigateToSkills }: ProfilePageProps) {
       onClick: () => setShowSkillsPage(true),
     },
     {
-      icon: Bell,
-      label: "消息通知",
-      badge: "2",
-      color: "#3b82f6",
-      onClick: () => {},
-    },
-    {
       icon: Settings,
       label: "设置",
       badge: null,

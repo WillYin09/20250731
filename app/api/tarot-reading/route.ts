@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { callQwenAPI } from "../../services/qwen-api"
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,16 +19,73 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 尝试调用AI服务
+    // 优先尝试Qwen API
     try {
-      const aiResponse = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
+      const systemPrompt = `你是一位极具洞察力的情绪指引师，拥有深厚的心理学、哲学知识和丰富的人生阅历。请为用户提供**深入、细致、有启发性**的塔罗牌解读。
+
+解读要求：
+1. 语言风格：神秘而温暖，富有诗意且富有哲理，能够触动人心
+2. 结构清晰：分为整体解读、深度分析、行动建议、祝福与展望四个部分
+3. **深度分析要求**：
+   - 每个部分内容可以适当展开，尤其是深度分析部分
+   - 请结合心理学、哲学、人生经验，深入剖析每张牌对用户问题的深层含义
+   - 分析卡牌之间的能量互动和整体象征意义
+   - 结合用户具体问题，给出个性化的深度洞察
+4. 个性化：结合用户问题和卡牌组合给出针对性建议
+5. 积极导向：即使是挑战性的卡牌也要给出建设性的指导
+6. **内容要求**：不要过于简短，每个部分可以适当展开，确保解读的深度和启发性
+
+请用中文回答，语调温和而充满智慧，让用户感受到深刻的洞察和温暖的指引。`
+
+      const userPrompt = `请为我解读这次${spreadType}指引：
+
+用户问题：${question || "寻求人生指引"}
+
+抽到的卡牌：
+${cards
+  .map(
+    (card, index) =>
+      `${index + 1}. ${card.translation || card.name} (${card.reversed ? "逆位" : "正位"}) - ${card.meaning || "深度洞察"}`,
+  )
+  .join("\n")}
+
+请提供一个**深入、细致、有启发性**的解读，分为四个部分：整体解读、深度分析、行动建议、祝福与展望。
+
+**特别要求**：
+- 整体解读：分析牌阵的整体能量和趋势，直接回应用户问题
+- 深度分析：详细解读每张牌的含义，分析牌与牌之间的关系，结合用户问题给出深层洞察
+- 行动建议：提供具体、实用的行动指导，包括短期和长期建议
+- 祝福与展望：给予温暖的鼓励和对未来的积极展望
+
+请确保解读内容深入、有启发性，能够真正帮助用户理解和行动。`
+
+      const aiResponse = await callQwenAPI([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ])
+
+      if (aiResponse && aiResponse.trim().length > 50) {
+        console.log("✅ Qwen API解读成功生成")
+        return NextResponse.json({
+          text: aiResponse.trim(),
+          success: true,
+          source: "qwen",
+        })
+      }
+    } catch (qwenError) {
+      console.error("Qwen API调用失败，尝试DeepSeek兜底:", qwenError)
+    }
+
+    // DeepSeek兜底
+    try {
+      const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.SILICONFLOW_API_TOKEN}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
           messages: [
             {
               role: "system",
@@ -64,102 +122,60 @@ ${cards
         }),
       })
 
-      if (aiResponse.ok) {
-        const aiData = await aiResponse.json()
+      if (response.ok) {
+        const aiData = await response.json()
         const aiText = aiData.choices?.[0]?.message?.content
 
         if (aiText && aiText.trim().length > 50) {
-          console.log("✅ AI解读成功生成")
+          console.log("✅ DeepSeek API解读成功生成")
           return NextResponse.json({
             text: aiText.trim(),
             success: true,
-            source: "ai",
+            source: "deepseek",
           })
         }
       }
 
       console.log("⚠️ AI响应无效，使用备用解读")
     } catch (aiError) {
-      console.error("AI调用失败:", aiError)
+      console.error("DeepSeek API调用失败:", aiError)
     }
 
-    // 生成高质量的备用解读内容
-    const generateQualityReading = (cards: any[], spreadType: string, userQuestion?: string) => {
-      const questionContext = userQuestion ? `关于您的问题"${userQuestion}"，` : ""
+    // 备用回答机制和错误处理保持不变
+    const fallbackResponses = {
+      过去: "过去的经历如同夜空中的星辰，虽已远去却依然闪烁着智慧的光芒。那些看似困难的时刻，实际上是宇宙为你准备的成长礼物。每一次挫折都在为今日的坚强奠定基础，相信过去的一切都有其深层的意义。",
+      现在: "此刻的你正站在人生的十字路口，内心的直觉正在轻声指引着方向。现在是行动的时机，也是静心聆听内在声音的时刻。相信自己的判断，同时保持开放的心态去接纳新的可能性。",
+      未来: "未来如同晨曦中的薄雾，朦胧中蕴含着无限的可能。你的选择和行动将如画笔般描绘出属于自己的人生画卷。保持积极的心态，未来的道路将因你的勇气而变得光明。",
+      情感: "情感的能量如同月光般温柔而神秘。真正的情感需要两颗心灵的共鸣，而不仅仅是表面的吸引。打开心扉，用真诚去感受，情感将在最合适的时机降临到你的生命中。",
+      职场: "职场的发展如同种子的成长，需要耐心的浇灌和时间的沉淀。现在正是积累能量的时期，专注于提升自己的能力，机会将在你准备充分时自然出现。",
+      财富: "财富不仅仅是物质的积累，更是内在价值的体现。保持正直的品格，用智慧去创造价值，财富将如流水般自然而来。记住，真正的富有来自于内心的满足。",
+      健康: "身心的和谐如同天地间的平衡，需要你用心去维护。倾听身体的声音，给予它足够的关爱和休息。健康的生活方式将为你带来持久的活力和幸福。",
+      人际: "人际关系如同花园中的花朵，需要用心去培育。真诚的沟通和理解是最好的养料。学会倾听他人的心声，同时也要勇敢表达自己的想法，和谐的关系将自然绽放。",
+    }
 
-      // 分析卡牌能量
-      const positiveCards = cards.filter((card) => !card.reversed).length
-      const reversedCards = cards.filter((card) => card.reversed).length
+    let fallbackMessage =
+      "亲爱的朋友，卡牌的智慧告诉我们，每个问题都蕴含着成长的机会。相信你内心的直觉，它会指引你找到属于自己的答案。保持开放的心态，生活的安排总是最好的。"
 
-      let energyDescription = ""
-      if (positiveCards > reversedCards) {
-        energyDescription = "整体能量偏向积极正面，预示着成长和机遇"
-      } else if (reversedCards > positiveCards) {
-        energyDescription = "当前存在一些挑战，但这正是转化和突破的契机"
-      } else {
-        energyDescription = "正逆位平衡，显示出人生的复杂性和多面性"
+    for (const [keyword, response] of Object.entries(fallbackResponses)) {
+      if (question?.includes(keyword)) {
+        fallbackMessage = response
+        break
       }
-
-      const reading = `## 整体解读
-
-${questionContext}从您抽取的${cards.length}张牌来看，${energyDescription}。宇宙正在为您编织一个充满可能性的故事，每张牌都承载着深刻的智慧和指引。
-
-## 深度分析
-
-${cards
-  .map((card, index) => {
-    const position = ["过去/根源", "现在/核心", "未来/结果", "外在影响", "内在指引"][index] || `第${index + 1}个层面`
-    return `**${card.translation || card.name}·${card.reversed ? "逆位" : "正位"}** (${position})：${card.reversed ? "提醒您关注内在的阻碍，这是成长的机会" : "带来积极的能量和前进的动力"}。`
-  })
-  .join("\n\n")}
-
-## 行动建议
-
-1. **保持觉察**：密切关注内心的声音和直觉的指引
-2. **积极行动**：将洞察转化为具体的行动步骤
-3. **保持平衡**：在追求目标的同时，不忘照顾内心的需求
-
-## 祝福与展望
-
-愿这次指引为您点亮前行的明灯。记住，卡牌揭示的是可能性，而真正的力量在于您的选择和行动。相信自己的智慧，拥抱变化，您的人生将绽放出独特的光彩。🌟`
-
-      return reading
     }
-
-    const readingText = generateQualityReading(cards, spreadType, question)
-
-    console.log("✅ 备用解读生成成功")
 
     return NextResponse.json({
-      text: readingText,
+      text: fallbackMessage,
       success: true,
       source: "fallback",
     })
   } catch (error) {
-    console.error("API处理错误:", error)
-
-    const errorReading = `## 卡牌指引
-
-虽然当前遇到了一些技术问题，但请相信，您选择的每张牌都蕴含着深刻的意义。
-
-## 整体解读
-
-从能量的角度来看，您正处在一个重要的人生节点。宇宙正在为您准备新的机遇和挑战，这是成长和转化的时刻。
-
-## 行动建议
-
-1. 保持内心的平静和开放
-2. 相信自己的直觉和判断力  
-3. 勇敢地迎接即将到来的变化
-
-## 祝福与展望
-
-愿您在人生的旅途中找到属于自己的光芒，每一步都充满智慧和勇气。🌟`
-
-    return NextResponse.json({
-      text: errorReading,
-      success: true,
-      source: "error_fallback",
-    })
+    console.error("塔罗牌解读API错误:", error)
+    return NextResponse.json(
+      {
+        error: "服务器内部错误",
+        text: "抱歉，解读服务暂时不可用，请稍后再试。",
+      },
+      { status: 500 },
+    )
   }
 }

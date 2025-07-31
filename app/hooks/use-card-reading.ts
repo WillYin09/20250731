@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef } from "react"
 import { getRandomTarotCards, getCardMeaning, type TarotCardData } from "../data/tarot-cards"
 import { getSpreadLayout } from "../data/spread-layouts"
 import { callDeepSeekAPI } from "../services/deepseek-api"
+import { callQwenAPI } from "../services/qwen-api"
 import { getBriefCardMeaning, generateConciseSummary } from "../utils/text-processing"
 
 export interface FlyingCard {
@@ -81,101 +82,37 @@ export function useCardReading(spreadType: string) {
     updateState({ isLoadingReading: true })
     try {
       const finalQuestion = state.selectedPresetQuestion || state.userQuestion || "寻求人生指导"
-
-      // 使用缓存的卡牌数据
       const cardsToUse = cachedCards.length > 0 ? cachedCards : state.revealedCards
-
-      // 构建卡牌描述
-      const cardDescriptions = cardsToUse
-        .map((card, index) => {
-          const position = spreadLayout.positions[index]
-          return `位置${index + 1}（${position.label}）：${card.translation || card.name}（${card.name}）${card.reversed ? " - 逆位" : " - 正位"}
-含义：${getCardMeaning(card, card.reversed)}
-描述：${card.description || "经典卡牌"}
-位置说明：${position.description}`
-        })
-        .join("\n\n")
-
-      // 构建专业的卡牌解读提示词
-      const systemPrompt = `你是一位经验丰富、充满智慧的情绪指引师，拥有深厚的心理学知识和直觉洞察力。你的解读风格温暖、专业且富有启发性，能够为咨询者提供深刻的人生指导。
-
-用户的具体问题是："${finalQuestion}"
-
-请务必围绕用户的问题进行解读，并严格按照以下4个模块格式提供详细的卡牌解读：
-
-### 整体解读
-- 直接回应用户的问题："${finalQuestion}"
-- 从整体牌面给出初步答案和指导方向
-- 总体能量分析和趋势概述
-
-### 深度分析
-对每张牌进行详细解读，格式为：
-位置1 (位置名)：牌名 (正位/逆位)
-
-含义与关联：
-- 详细解释该牌在此位置的含义
-- 与用户问题的关联分析
-
-指导建议：
-- 实用的指导建议
-- 具体的行动方向
-
-重要：请不要在位置标题前使用###符号，直接写"位置1 (位置名)：牌名 (正位/逆位)"即可。
-
-### 行动建议
-1. 针对用户问题的具体行动指导
-2. 需要注意的事项和潜在挑战
-3. 如何运用这次解读的智慧
-4. 时机把握和优先级安排
-
-### 祝福与展望
-- 对未来的积极展望
-- 温暖的祝福和鼓励
-- 最终的智慧总结
-
-请用中文回答，语言要温暖、专业、富有启发性。重要提示：请严格按照上述格式，使用###标记主要模块标题。`
-
-      const userPrompt = `请为以下卡牌指引提供详细解读：
-
-牌阵类型：${spreadType}
-用户问题：${finalQuestion}
-牌阵说明：${spreadLayout.description}
-
-抽到的卡牌：
-${cardDescriptions}
-
-请提供深入、实用且富有启发性的解读，特别要针对用户的问题"${finalQuestion}"给出具体的指导和建议。`
-
-      console.log("🤖 开始调用 DeepSeek API...")
-
-      // 调用 DeepSeek API
-      const aiResponse = await callDeepSeekAPI([
-        {
-          role: "system",
-          content: systemPrompt,
+      
+      // 调用服务端API，让服务端处理Qwen调用
+      const response = await fetch("/api/tarot-reading", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          role: "user",
-          content: userPrompt,
-        },
-      ])
+        body: JSON.stringify({
+          cards: cardsToUse.map((card, index) => ({
+            name: card.name,
+            translation: card.translation,
+            meaning: getCardMeaning(card, card.reversed),
+            reversed: card.reversed,
+            description: card.description,
+          })),
+          spreadType,
+          question: finalQuestion,
+        }),
+      })
 
-      if (aiResponse && aiResponse.trim()) {
-        let finalReading = aiResponse.trim()
-        if (
-          !finalReading.endsWith("。") &&
-          !finalReading.endsWith("？") &&
-          !finalReading.endsWith("！") &&
-          !finalReading.endsWith("🌟")
-        ) {
-          finalReading += "\n\n愿星光指引您前行的道路，愿智慧伴随您每一个选择。🌟"
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.text) {
+          updateState({ comprehensiveSummary: data.text })
+          console.log(`✅ ${data.source} API 响应成功`)
+          return
         }
-
-        updateState({ comprehensiveSummary: finalReading })
-        console.log("✅ DeepSeek API 响应成功")
-      } else {
-        throw new Error("AI返回内容为空")
       }
+
+      throw new Error("API调用失败")
     } catch (error) {
       console.error("AI解读生成失败:", error)
       const fallbackReading = generateFallbackReading()
