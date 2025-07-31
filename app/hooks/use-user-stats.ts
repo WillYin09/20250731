@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useCardCollection } from "./use-card-collection"
+import { useFavorites } from "./use-favorites"
 import { TAROT_CARDS } from "../data/tarot-cards"
 import { storageUtils, STORAGE_KEYS } from "../utils/storage-adapter"
 
@@ -10,6 +11,9 @@ export interface UserStats {
   consecutiveLoginDays: number
   mostFrequentCard: string | null
   lastLoginDate: string
+  satisfaction: number // 满意度
+  unlockedCards: number // 解锁卡牌数
+  level: string // 等级
   elementalBalance: {
     fire: number // 权杖
     water: number // 圣杯
@@ -24,10 +28,14 @@ export function useUserStats() {
     consecutiveLoginDays: 1,
     mostFrequentCard: null,
     lastLoginDate: new Date().toDateString(),
+    satisfaction: 0,
+    unlockedCards: 0,
+    level: "新手",
     elementalBalance: { fire: 0, water: 0, air: 0, earth: 0 },
   })
 
   const { collection } = useCardCollection()
+  const { favorites } = useFavorites()
 
   // 获取卡牌元素
   const getCardElement = (cardName: string): keyof UserStats["elementalBalance"] => {
@@ -64,6 +72,32 @@ export function useUserStats() {
 
     return majorArcanaElements[cardName] || "earth"
   }
+
+  // 计算满意度
+  const calculateSatisfaction = useCallback(() => {
+    if (favorites.length === 0) return 0
+    
+    const totalStars = favorites.reduce((sum, favorite) => sum + favorite.rating, 0)
+    const maxPossibleStars = favorites.length * 5 // 假设满分是5星
+    return Math.round((totalStars / maxPossibleStars) * 100)
+  }, [favorites])
+
+  // 计算等级
+  const calculateLevel = useCallback((totalDraws: number, consecutiveDays: number, unlockedCards: number) => {
+    // 等级计算公式：综合评分
+    const drawScore = Math.min(totalDraws * 2, 100) // 指引次数得分，最高100分
+    const loginScore = Math.min(consecutiveDays * 5, 50) // 连续登录得分，最高50分
+    const collectionScore = Math.min(unlockedCards * 2, 50) // 解锁卡牌得分，最高50分
+    
+    const totalScore = drawScore + loginScore + collectionScore
+    
+    if (totalScore >= 180) return "大师"
+    if (totalScore >= 150) return "专家"
+    if (totalScore >= 120) return "进阶"
+    if (totalScore >= 90) return "熟练"
+    if (totalScore >= 60) return "入门"
+    return "新手"
+  }, [])
 
   // 计算统计数据
   const calculateStats = useCallback(() => {
@@ -124,21 +158,33 @@ export function useUserStats() {
       earth: totalElements > 0 ? (elementCounts.earth / totalElements) * 100 : 25,
     }
 
+    // 计算满意度
+    const satisfaction = calculateSatisfaction()
+
+    // 计算解锁卡牌数
+    const unlockedCards = Object.values(collection).filter((card) => card.isUnlocked).length
+
+    // 计算等级
+    const level = calculateLevel(totalDraws, consecutiveDays, unlockedCards)
+
     const newStats: UserStats = {
       totalDraws,
       consecutiveLoginDays: consecutiveDays,
       mostFrequentCard,
       lastLoginDate: today,
+      satisfaction,
+      unlockedCards,
+      level,
       elementalBalance,
     }
 
     setStats(newStats)
     storageUtils.setJSON(STORAGE_KEYS.USER_STATS, newStats)
-  }, [collection, stats])
+  }, [collection, stats, favorites, calculateSatisfaction, calculateLevel])
 
   useEffect(() => {
     calculateStats()
-  }, [collection])
+  }, [collection, favorites])
 
   return {
     stats,

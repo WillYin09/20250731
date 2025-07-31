@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useFavorites } from "./use-favorites"
+import { TAROT_CARDS } from "../data/tarot-cards"
 
 export interface RecentReading {
   id: string
@@ -20,86 +22,88 @@ export interface RecentReading {
 }
 
 export function useRecentReadings() {
-  const [recentReadings, setRecentReadings] = useState<RecentReading[]>([
-    {
-      id: "1",
-      type: "三牌阵",
-      date: "今天",
-      result: "积极",
-      color: "bg-green-100 text-green-700",
-      cards: [
-        { name: "The Sun", translation: "太阳", position: "过去", meaning: "光明与希望", reversed: false },
-        { name: "The Star", translation: "星星", position: "现在", meaning: "指引与灵感", reversed: false },
-        { name: "The World", translation: "世界", position: "未来", meaning: "完成与成功", reversed: false },
-      ],
-      summary:
-        "这是一个非常积极的牌阵，显示你正从过去的光明经历中获得力量，现在有清晰的方向指引，未来将迎来圆满的成功。",
-      rating: 5,
-    },
-    {
-      id: "2",
-      type: "情感牌阵",
-      date: "昨天",
-      result: "中性",
-      color: "bg-gray-100 text-gray-700",
-      cards: [
-        { name: "The Lovers", translation: "恋人", position: "你", meaning: "爱与选择", reversed: false },
-        { name: "Two of Cups", translation: "圣杯二", position: "对方", meaning: "情感连接", reversed: false },
-        { name: "The Hermit", translation: "隐士", position: "关系", meaning: "内省与等待", reversed: true },
-      ],
-      summary: "感情方面需要更多的沟通和理解，虽然双方都有爱意，但可能需要时间来深入了解彼此。",
-      rating: 3,
-    },
-    {
-      id: "3",
-      type: "职场牌阵",
-      date: "3天前",
-      result: "积极",
-      color: "bg-green-100 text-green-700",
-      cards: [
-        { name: "Ace of Pentacles", translation: "星币一", position: "现状", meaning: "新的机会", reversed: false },
-        { name: "Three of Pentacles", translation: "星币三", position: "机会", meaning: "团队合作", reversed: false },
-        { name: "Ten of Pentacles", translation: "星币十", position: "结果", meaning: "长期成功", reversed: false },
-      ],
-      summary: "职场方面有很好的发展机会，通过团队合作可以获得长期的成功和稳定。",
-      rating: 4,
-    },
-  ])
+  const [recentReadings, setRecentReadings] = useState<RecentReading[]>([])
+  const { favorites } = useFavorites()
+
+  // 从收藏数据中提取最近指引记录
+  const extractRecentReadings = useCallback(() => {
+    if (!favorites || favorites.length === 0) {
+      return []
+    }
+
+    // 按时间排序，获取最近3次收藏的指引
+    const sortedReadings = favorites
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 3)
+
+    // 转换为RecentReading格式
+    const recentReadings: RecentReading[] = sortedReadings.map((reading) => {
+      // 计算日期显示
+      const readingDate = new Date(reading.timestamp)
+      const today = new Date()
+      const diffTime = Math.abs(today.getTime() - readingDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      let dateDisplay = ""
+      if (diffDays === 0) {
+        dateDisplay = "今天"
+      } else if (diffDays === 1) {
+        dateDisplay = "昨天"
+      } else if (diffDays <= 7) {
+        dateDisplay = `${diffDays}天前`
+      } else {
+        dateDisplay = reading.date
+      }
+
+      // 根据mood判断结果
+      const result = reading.mood
+      
+      return {
+        id: reading.id,
+        type: reading.spreadType,
+        date: dateDisplay,
+        result,
+        color: getResultColor(result),
+        cards: reading.cards.map(card => ({
+          name: card.name,
+          translation: getCardTranslation(card.name),
+          position: card.position,
+          meaning: card.meaning,
+          reversed: false // 收藏数据中没有reversed信息，默认为false
+        })),
+        summary: reading.summary,
+        rating: reading.rating,
+      }
+    })
+
+    return recentReadings
+  }, [favorites])
+
+  // 获取卡牌翻译
+  const getCardTranslation = (cardName: string) => {
+    const card = TAROT_CARDS.find(c => c.name === cardName)
+    return card?.translation || cardName
+  }
+
+  // 获取结果对应的颜色
+  const getResultColor = (result: string) => {
+    switch (result) {
+      case "积极": return "bg-green-100 text-green-700"
+      case "温暖": return "bg-yellow-100 text-yellow-700"
+      case "挑战": return "bg-red-100 text-red-700"
+      case "深刻": return "bg-purple-100 text-purple-700"
+      default: return "bg-gray-100 text-gray-700"
+    }
+  }
+
+  // 更新最近指引记录
+  useEffect(() => {
+    const readings = extractRecentReadings()
+    setRecentReadings(readings)
+  }, [extractRecentReadings])
 
   const getReadingHistory = (limit = 10) => {
-    // 模拟更多历史记录
-    const additionalReadings: RecentReading[] = [
-      {
-        id: "4",
-        type: "财富牌阵",
-        date: "1周前",
-        result: "挑战",
-        color: "bg-orange-100 text-orange-700",
-        cards: [
-          { name: "Five of Pentacles", translation: "星币五", position: "收入", meaning: "财务困难", reversed: false },
-          { name: "The Devil", translation: "诱惑", position: "支出", meaning: "物质束缚", reversed: false },
-          { name: "The Fool", translation: "愚人", position: "建议", meaning: "新的开始", reversed: false },
-        ],
-        summary: "财务方面需要谨慎管理，避免不必要的支出，寻找新的收入来源。",
-        rating: 2,
-      },
-      {
-        id: "5",
-        type: "三牌阵",
-        date: "1周前",
-        result: "深刻",
-        color: "bg-purple-100 text-purple-700",
-        cards: [
-              { name: "Death", translation: "转变", position: "过去", meaning: "转变结束", reversed: false },
-    { name: "The Tower", translation: "变革", position: "现在", meaning: "突然变化", reversed: false },
-          { name: "The Star", translation: "星星", position: "未来", meaning: "希望重生", reversed: false },
-        ],
-        summary: "经历了重大的人生转变，虽然过程艰难，但最终会迎来新的希望和机会。",
-        rating: 4,
-      },
-    ]
-
-    return [...recentReadings, ...additionalReadings].slice(0, limit)
+    return recentReadings.slice(0, limit)
   }
 
   const addReading = (reading: Omit<RecentReading, "id">) => {

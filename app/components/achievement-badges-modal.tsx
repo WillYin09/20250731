@@ -2,9 +2,12 @@
 
 import type React from "react"
 
-import { X, Award, Star, Calendar, Target, BookOpen, Users, Trophy } from "lucide-react"
+import { X, Award, Star, Calendar, Target, BookOpen, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useUserStats } from "../hooks/use-user-stats"
+import { useFavorites } from "../hooks/use-favorites"
+import { useCardCollection } from "../hooks/use-card-collection"
 
 interface Achievement {
   id: string
@@ -16,7 +19,7 @@ interface Achievement {
   maxProgress: number
   unlocked: boolean
   unlockedDate?: string
-  category: "指引" | "学习" | "社交" | "特殊"
+  category: "指引" | "学习" | "特殊"
 }
 
 interface AchievementBadgesModalProps {
@@ -26,79 +29,107 @@ interface AchievementBadgesModalProps {
 
 export default function AchievementBadgesModal({ isOpen, onClose }: AchievementBadgesModalProps) {
   const [selectedCategory, setSelectedCategory] = useState("全部")
+  const [achievements, setAchievements] = useState<Achievement[]>([])
+  
+  const { stats } = useUserStats()
+  const { favorites } = useFavorites()
+  const { collection } = useCardCollection()
 
-  const achievements: Achievement[] = [
-    {
-      id: "first_reading",
-          name: "初次指引",
-    description: "完成第一次卡牌指引",
-      icon: Star,
-      color: "#FFD700",
-      progress: 1,
-      maxProgress: 1,
-      unlocked: true,
-      unlockedDate: "2024-01-15",
-      category: "指引",
-    },
-    {
-      id: "reading_streak_7",
-      name: "七日连指",
-      description: "连续7天进行指引",
-      icon: Calendar,
-      color: "#10b981",
-      progress: 7,
-      maxProgress: 7,
-      unlocked: true,
-      unlockedDate: "2024-01-22",
-      category: "指引",
-    },
-    {
-      id: "accurate_reader",
-      name: "准确指引师",
-      description: "获得10次5星评价",
-      icon: Target,
-      color: "#8b5cf6",
-      progress: 8,
-      maxProgress: 10,
-      unlocked: false,
-      category: "指引",
-    },
-    {
-      id: "card_collector",
-      name: "卡牌收集家",
-      description: "解锁所有78张卡牌",
-      icon: BookOpen,
-      color: "#f59e0b",
-      progress: 45,
-      maxProgress: 78,
-      unlocked: false,
-      category: "学习",
-    },
-    {
-      id: "community_helper",
-      name: "社区助手",
-      description: "帮助50位新手解答问题",
-      icon: Users,
-      color: "#06b6d4",
-      progress: 23,
-      maxProgress: 50,
-      unlocked: false,
-      category: "社交",
-    },
-    {
-      id: "master_reader",
-      name: "指引大师",
-      description: "完成1000次指引",
-      icon: Trophy,
-      color: "#dc2626",
-      progress: 234,
-      maxProgress: 1000,
-      unlocked: false,
-      category: "特殊",
-    },
-  ]
+  // 计算真实成就数据
+  const calculateAchievements = useCallback(() => {
+    const today = new Date()
+    
+    // 1. 初次指引
+    const firstReading = stats.totalDraws >= 1
+    const firstReadingDate = firstReading ? "2024-01-15" : undefined // 这里应该从实际数据中获取
 
-  const categories = ["全部", "指引", "学习", "社交", "特殊"]
+    // 2. 连续登录天数
+    const consecutiveDays = stats.consecutiveLoginDays
+    const streak7 = consecutiveDays >= 7
+    const streak7Date = streak7 ? "2024-01-22" : undefined // 这里应该从实际数据中获取
+
+    // 3. 5星评价数量
+    const fiveStarRatings = favorites.filter(fav => fav.rating === 5).length
+    const accurateReader = fiveStarRatings >= 10
+
+    // 4. 解锁卡牌数量
+    const unlockedCards = Object.values(collection).filter(card => card.isUnlocked).length
+    const cardCollector = unlockedCards >= 78
+
+    // 5. 总指引次数
+    const totalReadings = stats.totalDraws
+    const masterReader = totalReadings >= 1000
+
+    const newAchievements: Achievement[] = [
+      {
+        id: "first_reading",
+        name: "初次指引",
+        description: "完成第一次卡牌指引",
+        icon: Star,
+        color: "#FFD700",
+        progress: Math.min(stats.totalDraws, 1),
+        maxProgress: 1,
+        unlocked: firstReading,
+        unlockedDate: firstReadingDate,
+        category: "指引",
+      },
+      {
+        id: "reading_streak_7",
+        name: "七日连指",
+        description: "连续7天进行指引",
+        icon: Calendar,
+        color: "#10b981",
+        progress: Math.min(consecutiveDays, 7),
+        maxProgress: 7,
+        unlocked: streak7,
+        unlockedDate: streak7Date,
+        category: "指引",
+      },
+      {
+        id: "accurate_reader",
+        name: "准确指引师",
+        description: "获得10次5星评价",
+        icon: Target,
+        color: "#8b5cf6",
+        progress: fiveStarRatings,
+        maxProgress: 10,
+        unlocked: accurateReader,
+        category: "指引",
+      },
+      {
+        id: "card_collector",
+        name: "卡牌收集家",
+        description: "解锁所有78张卡牌",
+        icon: BookOpen,
+        color: "#f59e0b",
+        progress: unlockedCards,
+        maxProgress: 78,
+        unlocked: cardCollector,
+        category: "学习",
+      },
+      {
+        id: "master_reader",
+        name: "指引大师",
+        description: "完成1000次指引",
+        icon: Trophy,
+        color: "#dc2626",
+        progress: totalReadings,
+        maxProgress: 1000,
+        unlocked: masterReader,
+        category: "特殊",
+      },
+    ]
+
+    setAchievements(newAchievements)
+  }, [stats, favorites, collection])
+
+  useEffect(() => {
+    if (isOpen) {
+      calculateAchievements()
+    }
+  }, [isOpen, calculateAchievements])
+
+  const categories = ["全部", "指引", "学习", "特殊"]
 
   const filteredAchievements = achievements.filter(
     (achievement) => selectedCategory === "全部" || achievement.category === selectedCategory,

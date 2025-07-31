@@ -242,7 +242,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
   }
 
   const handleShare = () => {
-    if (state.phase === "reading" && state.revealedCards.length > 0 && state.comprehensiveSummary) {
+    if (state.comprehensiveSummary && state.revealedCards.length > 0) {
       setShowShareModal(true)
     }
   }
@@ -353,23 +353,29 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 onClick={handleShare}
+                disabled={!(state.comprehensiveSummary && state.revealedCards.length > 0)}
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#F5F5DC",
-                  cursor: "pointer",
+                  color: state.comprehensiveSummary && state.revealedCards.length > 0 ? "#F5F5DC" : "#888888",
+                  cursor: state.comprehensiveSummary && state.revealedCards.length > 0 ? "pointer" : "not-allowed",
                   padding: "6px",
                   borderRadius: "50%",
                   transition: "all 0.3s ease",
+                  position: "relative"
                 }}
-                title="分享指引结果"
+                title={state.comprehensiveSummary && state.revealedCards.length > 0 ? "分享指引结果" : "请先完成AI解读后再分享"}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
-                  e.currentTarget.style.color = "#FFD700"
+                  if (state.comprehensiveSummary && state.revealedCards.length > 0) {
+                    e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
+                    e.currentTarget.style.color = "#FFD700"
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                  e.currentTarget.style.color = "#F5F5DC"
+                  if (state.comprehensiveSummary && state.revealedCards.length > 0) {
+                    e.currentTarget.style.backgroundColor = "transparent"
+                    e.currentTarget.style.color = "#F5F5DC"
+                  }
                 }}
               >
                 <Share2 size={18} />

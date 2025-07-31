@@ -55,25 +55,25 @@ export default function ProfilePage({ onNavigateToSkills }: ProfilePageProps) {
       tooltip: "您在抽张塔罗吧进行指引的总次数，包括所有类型的牌阵指引",
     },
     {
-      label: "准确率",
-      value: "85%",
+      label: "满意度",
+      value: `${stats.satisfaction}%`,
       icon: TrendingUp,
       color: "#10b981",
-      tooltip: "基于您的指引反馈和评分计算的准确度，反映指引结果与实际情况的符合程度",
+      tooltip: "基于您对指引结果的评分计算的满意度，反映指引结果与您期望的符合程度",
     },
     {
       label: "收藏数",
-      value: "42",
+      value: stats.unlockedCards.toString(),
       icon: Star,
       color: "#FFD700",
-      tooltip: "您收藏的指引记录数量，包括所有评分并保存的指引结果",
+      tooltip: "您已解锁的塔罗牌数量，每张牌都代表一次独特的指引体验",
     },
     {
       label: "等级",
-      value: "进阶",
+      value: stats.level,
       icon: Award,
       color: "#B8860B",
-      tooltip: "根据您的指引次数、连续登录天数和成就获得情况综合评定的等级",
+      tooltip: "根据您的指引次数、连续登录天数和解锁卡牌数综合评定的等级",
     },
   ]
 
