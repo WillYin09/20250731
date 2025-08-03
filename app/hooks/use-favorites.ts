@@ -25,7 +25,6 @@ export function useFavorites() {
   // 从存储加载收藏数据
   useEffect(() => {
     const parsedFavorites = storageUtils.getJSON<SavedReading[]>(STORAGE_KEYS.FAVORITES, [])
-    console.log("Loaded favorites from storage:", parsedFavorites.length)
     setFavorites(parsedFavorites)
     setIsLoading(false)
   }, [])
@@ -33,17 +32,13 @@ export function useFavorites() {
   // 保存到存储的辅助函数
   const saveFavoritesToStorage = useCallback((newFavorites: SavedReading[]) => {
     storageUtils.setJSON(STORAGE_KEYS.FAVORITES, newFavorites)
-    console.log("Saved favorites to storage:", newFavorites.length)
   }, [])
 
   // 添加收藏
   const addFavorite = useCallback(
     (reading: Omit<SavedReading, "id" | "timestamp">) => {
-      console.log("Adding favorite, current favorites count:", favorites.length)
-
       // 检查是否已达到收藏上限（改为10条）
       if (favorites.length >= 10) {
-        console.log("Favorites limit reached")
         return { success: false, message: "收藏夹已满，最多只能收藏10条记录" }
       }
 
@@ -54,13 +49,10 @@ export function useFavorites() {
       }
 
       const newFavorites = [newReading, ...favorites]
-      console.log("Creating new favorites array, count will be:", newFavorites.length)
-
       // 同步更新状态和localStorage
       setFavorites(newFavorites)
       saveFavoritesToStorage(newFavorites)
 
-      console.log("Favorite added successfully, new count:", newFavorites.length)
       return { success: true, id: newReading.id }
     },
     [favorites, saveFavoritesToStorage],
@@ -69,9 +61,7 @@ export function useFavorites() {
   // 删除收藏
   const removeFavorite = useCallback(
     (id: string) => {
-      console.log("Removing favorite with id:", id)
       const newFavorites = favorites.filter((fav) => fav.id !== id)
-      console.log("After removal, count will be:", newFavorites.length)
 
       setFavorites(newFavorites)
       saveFavoritesToStorage(newFavorites)
@@ -92,12 +82,6 @@ export function useFavorites() {
       const result = favorites.some((fav) => {
         const favIdentifier = `${fav.spreadType}-${fav.cards.map((c) => `${c.name}-${c.position}`).join("-")}-${Math.floor(fav.timestamp / 60000)}`
         return favIdentifier === identifier
-      })
-
-      console.log("Checking if favorited:", {
-        identifier,
-        result,
-        favoritesCount: favorites.length,
       })
 
       return result

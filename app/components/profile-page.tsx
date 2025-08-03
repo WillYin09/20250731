@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import { useUserStats } from "../hooks/use-user-stats"
 import { useRecentReadings } from "../hooks/use-recent-readings"
+import { useFavorites } from "../hooks/use-favorites"
+import { useCardCollection } from "../hooks/use-card-collection"
 import StatsTooltipModal from "./stats-tooltip-modal"
 import RecentReadingDetailModal from "./recent-reading-detail-modal"
 import ReadingHistoryModal from "./reading-history-modal"
@@ -33,9 +35,20 @@ interface ProfilePageProps {
   onNavigateToSkills?: () => void
 }
 
+interface Achievement {
+  id: string
+  name: string
+  description: string
+  unlocked: boolean
+  unlockedDate?: string
+}
+
 export default function ProfilePage({ onNavigateToSkills }: ProfilePageProps) {
   const { stats } = useUserStats()
   const { recentReadings, getReadingHistory } = useRecentReadings()
+  const { favorites } = useFavorites()
+  const { collection } = useCardCollection()
+  
   const [showStatsTooltip, setShowStatsTooltip] = useState<string | null>(null)
   const [showRecentDetail, setShowRecentDetail] = useState(false)
   const [showReadingHistory, setShowReadingHistory] = useState(false)
@@ -45,6 +58,132 @@ export default function ProfilePage({ onNavigateToSkills }: ProfilePageProps) {
   const [showHelpCenter, setShowHelpCenter] = useState(false)
   const [showSkillsPage, setShowSkillsPage] = useState(false)
   const [selectedReading, setSelectedReading] = useState<any>(null)
+  const [newAchievementsCount, setNewAchievementsCount] = useState(0)
+
+  // 计算真实成就数据
+  const calculateAchievements = useCallback(() => {
+    const today = new Date()
+    
+    // 从localStorage获取成就解锁时间
+    const achievementDates = JSON.parse(localStorage.getItem('achievementDates') || '{}')
+    
+    // 1. 初次指引
+    const firstReading = stats.totalDraws >= 1
+    const firstReadingDate = firstReading ? achievementDates.first_reading : undefined
+
+    // 2. 连续登录天数
+    const consecutiveDays = stats.consecutiveLoginDays
+    const streak7 = consecutiveDays >= 7
+    const streak7Date = streak7 ? achievementDates.reading_streak_7 : undefined
+
+    // 3. 5星评价数量
+    const fiveStarRatings = favorites.filter(fav => fav.rating === 5).length
+    const accurateReader = fiveStarRatings >= 10
+    const accurateReaderDate = accurateReader ? achievementDates.accurate_reader : undefined
+
+    // 4. 解锁卡牌数量
+    const unlockedCards = Object.values(collection).filter(card => card.isUnlocked).length
+    const cardCollector = unlockedCards >= 78
+    const cardCollectorDate = cardCollector ? achievementDates.card_collector : undefined
+
+    // 5. 总指引次数
+    const totalReadings = stats.totalDraws
+    const masterReader = totalReadings >= 1000
+    const masterReaderDate = masterReader ? achievementDates.master_reader : undefined
+
+    return [
+      {
+        id: "first_reading",
+        name: "初次指引",
+        unlocked: firstReading,
+        unlockedDate: firstReadingDate,
+      },
+      {
+        id: "reading_streak_7",
+        name: "七日连指",
+        unlocked: streak7,
+        unlockedDate: streak7Date,
+      },
+      {
+        id: "accurate_reader",
+        name: "准确指引师",
+        unlocked: accurateReader,
+        unlockedDate: accurateReaderDate,
+      },
+      {
+        id: "card_collector",
+        name: "卡牌收集家",
+        unlocked: cardCollector,
+        unlockedDate: cardCollectorDate,
+      },
+      {
+        id: "master_reader",
+        name: "指引大师",
+        unlocked: masterReader,
+        unlockedDate: masterReaderDate,
+      },
+    ]
+  }, [stats, favorites, collection])
+
+  // 检测并记录新成就
+  const detectAndRecordNewAchievements = useCallback(() => {
+    const achievements = calculateAchievements()
+    const achievementDates = JSON.parse(localStorage.getItem('achievementDates') || '{}')
+    let hasNewAchievements = false
+    
+    // 检查每个成就，如果刚解锁且没有记录时间，则记录
+    achievements.forEach(achievement => {
+      if (achievement.unlocked && !achievementDates[achievement.id]) {
+        achievementDates[achievement.id] = new Date().toISOString().split('T')[0] // 格式：YYYY-MM-DD
+        hasNewAchievements = true
+      }
+    })
+    
+    // 如果有新成就，更新localStorage
+    if (hasNewAchievements) {
+      localStorage.setItem('achievementDates', JSON.stringify(achievementDates))
+    }
+    
+    return achievements
+  }, [calculateAchievements])
+
+  // 检测新成就
+  const detectNewAchievements = useCallback(() => {
+    const achievements = detectAndRecordNewAchievements()
+    const unlockedAchievements = achievements.filter(a => a.unlocked)
+    
+    // 从localStorage获取已读的成就
+    const readAchievements = JSON.parse(localStorage.getItem('readAchievements') || '[]')
+    
+    // 计算新成就数量（已解锁但未读的）
+    const newCount = unlockedAchievements.filter(achievement => 
+      !readAchievements.includes(achievement.id)
+    ).length
+    
+    setNewAchievementsCount(newCount)
+  }, [detectAndRecordNewAchievements])
+
+  // 标记成就为已读
+  const markAchievementsAsRead = useCallback(() => {
+    const achievements = calculateAchievements()
+    const unlockedAchievements = achievements.filter(a => a.unlocked)
+    
+    // 将所有已解锁的成就标记为已读
+    const achievementIds = unlockedAchievements.map(a => a.id)
+    localStorage.setItem('readAchievements', JSON.stringify(achievementIds))
+    
+    setNewAchievementsCount(0)
+  }, [calculateAchievements])
+
+  // 处理成就页面打开
+  const handleAchievementsClick = () => {
+    markAchievementsAsRead()
+    setShowAchievements(true)
+  }
+
+  useEffect(() => {
+    detectNewAchievements()
+  }, [detectNewAchievements])
 
   const userStatsData = [
     {
@@ -88,9 +227,9 @@ export default function ProfilePage({ onNavigateToSkills }: ProfilePageProps) {
     {
       icon: Award,
       label: "成就徽章",
-      badge: "3",
+      badge: newAchievementsCount > 0 ? newAchievementsCount.toString() : null,
       color: "#FFD700",
-      onClick: () => setShowAchievements(true),
+      onClick: handleAchievementsClick,
     },
     {
       icon: BookOpen,

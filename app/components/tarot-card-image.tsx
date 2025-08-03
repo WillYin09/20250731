@@ -36,7 +36,6 @@ export default function TarotCardImage({
   // 重置状态当卡牌变化时
   useEffect(() => {
     if (card?.image && isRevealed) {
-      console.log(`🎴 开始加载卡牌图片: ${card.name} - ${card.image}`)
       setImageState("loading")
     } else {
       setImageState("idle")
@@ -44,12 +43,10 @@ export default function TarotCardImage({
   }, [card?.image, card?.name, isRevealed])
 
   const handleImageLoad = useCallback(() => {
-    console.log(`✅ 卡牌图片加载成功: ${card?.name}`)
     setImageState("loaded")
   }, [card?.name])
 
   const handleImageError = useCallback(() => {
-    console.log(`❌ 卡牌图片加载失败: ${card?.name} - ${card?.image}`)
     setImageState("error")
   }, [card?.name, card?.image])
 

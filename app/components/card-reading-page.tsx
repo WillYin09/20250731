@@ -13,7 +13,7 @@ import TarotCardImage from "./tarot-card-image"
 import FormattedReading from "./formatted-reading"
 import QuestionInputSection from "./question-input-section"
 import { getPresetQuestions } from "../utils/text-processing"
-import { getCardMeaning } from "../data/tarot-cards"
+import { getCardMeaning, type TarotCardWithOrientation } from "../data/tarot-cards"
 
 export interface CardReadingPageProps {
   spreadType: string
@@ -21,6 +21,14 @@ export interface CardReadingPageProps {
 }
 
 export default function CardReadingPage({ spreadType, onBack }: CardReadingPageProps) {
+  // 适配函数：将 TarotCardWithOrientation 转换为 TarotCardImage 期望的格式
+  const adaptCardForImage = (card: TarotCardWithOrientation) => ({
+    name: card.name,
+    translation: card.translation,
+    image: card.image,
+    reversed: card.isReversed,
+  })
+
   const {
     state,
     updateState,
@@ -54,7 +62,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       const cardData = state.revealedCards.map((card, index) => ({
         name: card.name,
         position: spreadLayout.positions[index].label,
-        reversed: card.reversed,
+        reversed: card.isReversed,
       }))
       recordReading(cardData, spreadType)
 
@@ -219,7 +227,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         rating: state.userRating,
         cards: state.revealedCards.map((card, index) => ({
           name: card.name,
-          meaning: getCardMeaning(card, card.reversed),
+          meaning: getCardMeaning(card, card.isReversed),
           position: spreadLayout.positions[index].label,
         })),
       })
@@ -248,14 +256,28 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
   }
 
   const getCardSize = (size?: "small" | "normal" | "large") => {
+    let baseSize
     switch (size) {
       case "small":
-        return { width: 50, height: 75 }
+        baseSize = { width: 50, height: 75 }
+        break
       case "large":
-        return { width: 80, height: 120 }
+        baseSize = { width: 80, height: 120 }
+        break
       default:
-        return { width: 65, height: 98 }
+        baseSize = { width: 65, height: 98 }
+        break
     }
+    
+    // 为凯尔特十字使用更小的卡牌尺寸
+    if (spreadType === "凯尔特十字") {
+      return {
+        width: Math.round(baseSize.width * 0.85), // 缩小15%
+        height: Math.round(baseSize.height * 0.85)
+      }
+    }
+    
+    return baseSize
   }
 
   const handlePresetQuestionClick = (question: string) => {
@@ -330,8 +352,8 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "12px 20px",
-              paddingTop: "50px",
+              padding: "8px 20px",
+              paddingTop: "12px",
             }}
           >
             <button
@@ -345,12 +367,25 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 color: "#F5F5DC",
                 fontSize: "15px",
                 cursor: "pointer",
+                zIndex: 1000,
+                position: "relative",
+                padding: "8px",
+                borderRadius: "4px",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
+                e.currentTarget.style.color = "#FFD700"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent"
+                e.currentTarget.style.color = "#F5F5DC"
               }}
             >
               <ArrowLeft size={18} />
               返回
             </button>
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "6px" }}>
               <button
                 onClick={handleShare}
                 disabled={!(state.comprehensiveSummary && state.revealedCards.length > 0)}
@@ -393,11 +428,13 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
           </div>
 
           {/* Title */}
-          <div style={{ textAlign: "center", padding: "15px 0 25px" }}>
+          <div style={{ textAlign: "center", padding: "10px 0 15px" }}>
             <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>
               {spreadType}解读
             </h1>
-            <p style={{ color: "#D4AF37", fontSize: "13px" }}>{spreadLayout.description}</p>
+            {spreadLayout.description && (
+              <p style={{ color: "#D4AF37", fontSize: "13px" }}>{spreadLayout.description}</p>
+            )}
             {(state.selectedPresetQuestion || state.userQuestion) && (
               <div
                 style={{
@@ -443,7 +480,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                    <TarotCardImage card={cardData} isRevealed={true} width={50} height={75} className="shadow-md" />
+                    <TarotCardImage card={adaptCardForImage(cardData)} isRevealed={true} width={50} height={75} className="shadow-md" />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
                         <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F5F5DC", margin: 0 }}>
@@ -461,7 +498,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                         >
                           {spreadLayout.positions[index].label}
                         </span>
-                        {cardData.reversed && (
+                        {cardData.isReversed && (
                           <span
                             style={{
                               fontSize: "11px",
@@ -477,7 +514,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                         )}
                       </div>
                       <p style={{ color: "#FFD700", fontWeight: "500", fontSize: "13px", margin: "0 0 3px 0" }}>
-                        {getCardMeaning(cardData, cardData.reversed)}
+                        {getCardMeaning(cardData, cardData.isReversed)}
                       </p>
                       <p style={{ color: "#D4AF37", fontSize: "11px", margin: 0 }}>
                         {spreadLayout.positions[index].description}
@@ -509,7 +546,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 }}
               >
                 <Loader2 size={18} style={{ animation: "spin 1s linear infinite", color: "#FFD700" }} />
-                <span style={{ color: "#FFD700", fontSize: "15px" }}>DeepSeek AI正在为您深度解读...</span>
+                <span style={{ color: "#FFD700", fontSize: "15px" }}>正在思考...</span>
               </div>
             ) : (
               <FormattedReading content={state.comprehensiveSummary} />
@@ -606,7 +643,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             cards: state.revealedCards.map((card, index) => ({
               card,
               position: spreadLayout.positions[index].label,
-              meaning: getCardMeaning(card, card.reversed),
+              meaning: getCardMeaning(card, card.isReversed),
               reversed: card.reversed,
             })),
             summary: state.comprehensiveSummary,
@@ -665,17 +702,17 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       ))}
 
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 20px",
-          paddingTop: "50px",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
+                <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px 20px",
+              paddingTop: "12px",
+              position: "relative",
+              zIndex: 10,
+            }}
+          >
         <button
           onClick={onBack}
           style={{
@@ -701,7 +738,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
           <ArrowLeft size={18} />
           返回
         </button>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "6px" }}>
           <button
             style={{
               background: "none",
@@ -752,10 +789,10 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       </div>
 
       {/* Title */}
-      <div style={{ textAlign: "center", padding: "15px 0 25px", position: "relative", zIndex: 10 }}>
+      <div style={{ textAlign: "center", padding: "10px 0 10px", position: "relative", zIndex: 10 }}>
         <h1
           style={{
-            fontSize: "22px",
+            fontSize: "18px",
             fontWeight: "600",
             color: "#FFD700",
             marginBottom: "6px",
@@ -786,7 +823,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       />
 
       {/* Card Positions */}
-      <div style={{ padding: "0 30px 40px", position: "relative", zIndex: 10 }}>
+      <div style={{ padding: "0 30px 4px", position: "relative", zIndex: 10 }}>
         <div
           style={{
             position: "relative",
@@ -794,7 +831,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             height: `${Math.max(300, 400 / spreadLayout.containerAspectRatio)}px`,
             maxWidth: spreadType === "凯尔特十字" ? "400px" : "500px",
             margin: "0 auto",
-            marginBottom: "25px",
+            marginBottom: "12px",
           }}
         >
           {spreadLayout.positions.map((position, index) => {
@@ -927,7 +964,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* Selection Progress */}
-        <div style={{ textAlign: "center", marginBottom: "25px" }}>
+        <div style={{ textAlign: "center", marginBottom: "4px" }}>
           <p style={{ color: "#FFD700", fontSize: "14px", fontWeight: "500", marginBottom: "8px" }}>
             已选择 {state.selectedCards.length}/{totalCards} 张牌
           </p>
@@ -949,7 +986,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* AI Reading Button */}
-        <div style={{ textAlign: "center", marginBottom: "15px" }}>
+        <div style={{ textAlign: "center", marginBottom: "4px" }}>
           {state.selectedCards.length === totalCards ? (
             <button
               onClick={() => {
@@ -984,7 +1021,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
               }}
             >
               <Zap size={16} />
-              DeepSeek AI解读
+              点击查看牌阵解读
             </button>
           ) : (
             <div
@@ -1004,10 +1041,10 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* Instructions */}
-        <div style={{ textAlign: "center", marginBottom: "25px" }}>
+        <div style={{ textAlign: "center", marginBottom: "6px" }}>
           <p style={{ color: "#D4AF37", fontSize: "12px" }}>
             {state.selectedCards.length === totalCards
-              ? "点击AI解读按钮查看详细分析"
+              ? "点击查看牌阵解读"
               : state.phase === "selecting"
                 ? "左右滑动并根据你的直觉选择，单击即可选中"
                 : "正在为您揭示命运的奥秘..."}

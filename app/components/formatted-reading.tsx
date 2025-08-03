@@ -97,6 +97,54 @@ export default function FormattedReading({ content, cards }: FormattedReadingPro
     return text.substring(0, maxLength) + "..."
   }
 
+  // 标点标准化和智能分段
+  const standardizePunctuation = (text: string) => {
+    return text
+      .replace(/\./g, '。')
+      .replace(/\?/g, '？')
+      .replace(/\!/g, '！')
+      .replace(/\r\n|\r/g, '\n') // 统一换行
+      // 清理表格相关符号和单独的-符号
+      .replace(/^\s*[-|]\s*$/gm, '') // 移除单独一行的-或|
+      .replace(/^\s*[-|]\s+/gm, '') // 移除行首的-或|
+      .replace(/\|\s*[-|]\s*\|/g, '') // 移除表格分隔符
+      .replace(/^\s*\|.*\|\s*$/gm, '') // 移除表格行
+      .replace(/\n{3,}/g, '\n\n') // 清理多余换行
+      // 清理单独的句号，转换为正常省略号
+      .replace(/^\s*。\s*$/gm, '') // 移除单独一行的句号
+      .replace(/。{2,}/g, '...') // 将多个句号转换为省略号
+      .replace(/。\s*。\s*。/g, '...') // 将分散的句号转换为省略号
+      .trim()
+  }
+
+  const smartSplitParagraphs = (text: string) => {
+    if (!text) return []
+    // 先标准化标点
+    let t = standardizePunctuation(text)
+    // 特殊符号前加换行，便于分段
+    t = t.replace(/(> |• |\-|——|---|\d+\.|[一二三四五六七八九十]、)/g, '\n$1')
+    // 按句号、问号、感叹号+换行或多个换行分段
+    const rawParas = t.split(/(?<=[。？！])\s*\n+|\n{2,}/)
+    // 进一步按句号、问号、感叹号分割长段
+    let paras: string[] = []
+    rawParas.forEach(p => {
+      if (p.length > 60) {
+        paras.push(...p.split(/(?<=[。？！])\s*/))
+      } else {
+        paras.push(p)
+      }
+    })
+    // 去除空段
+    return paras.map(p => p.trim()).filter(Boolean)
+  }
+
+  // 渲染分段内容的辅助函数
+  const renderParagraphs = (text: string) => {
+    return smartSplitParagraphs(text).map((para, idx) => (
+      <div key={idx} style={{ marginBottom: 8 }}>{para}</div>
+    ))
+  }
+
   return (
     <div className="space-y-4">
       {/* 整体解读 */}
@@ -115,9 +163,12 @@ export default function FormattedReading({ content, cards }: FormattedReadingPro
               整体解读
             </h3>
           </div>
-          <p className="leading-relaxed" style={{ color: "#F5F5DC" }}>
-            {sections.overall}
-          </p>
+          <div 
+            className="leading-relaxed whitespace-pre-wrap break-words" 
+            style={{ color: "#F5F5DC", wordWrap: "break-word", overflowWrap: "break-word" }}
+          >
+            {renderParagraphs(sections.overall)}
+          </div>
         </div>
       </Card>
 
@@ -159,9 +210,19 @@ export default function FormattedReading({ content, cards }: FormattedReadingPro
           </div>
           <div className="space-y-3" style={{ color: "#F5F5DC" }}>
             {expandedSections.deepAnalysis ? (
-              <div className="whitespace-pre-line leading-relaxed">{sections.deepAnalysis}</div>
+              <div 
+                className="whitespace-pre-wrap break-words leading-relaxed" 
+                style={{ wordWrap: "break-word", overflowWrap: "break-word" }}
+              >
+                {renderParagraphs(sections.deepAnalysis)}
+              </div>
             ) : (
-              <p className="leading-relaxed">{truncateText(sections.deepAnalysis)}</p>
+              <div 
+                className="leading-relaxed break-words" 
+                style={{ wordWrap: "break-word", overflowWrap: "break-word" }}
+              >
+                {renderParagraphs(truncateText(sections.deepAnalysis))}
+              </div>
             )}
           </div>
         </div>
@@ -183,9 +244,12 @@ export default function FormattedReading({ content, cards }: FormattedReadingPro
               行动建议
             </h3>
           </div>
-          <p className="leading-relaxed" style={{ color: "#F5F5DC" }}>
-            {sections.actionAdvice}
-          </p>
+          <div 
+            className="leading-relaxed whitespace-pre-wrap break-words" 
+            style={{ color: "#F5F5DC", wordWrap: "break-word", overflowWrap: "break-word" }}
+          >
+            {renderParagraphs(sections.actionAdvice)}
+          </div>
         </div>
       </Card>
 
@@ -205,9 +269,12 @@ export default function FormattedReading({ content, cards }: FormattedReadingPro
               祝福与展望
             </h3>
           </div>
-          <p className="leading-relaxed" style={{ color: "#F5F5DC" }}>
-            {sections.blessing}
-          </p>
+          <div 
+            className="leading-relaxed whitespace-pre-wrap break-words" 
+            style={{ color: "#F5F5DC", wordWrap: "break-word", overflowWrap: "break-word" }}
+          >
+            {renderParagraphs(sections.blessing)}
+          </div>
         </div>
       </Card>
     </div>

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { MessageCircle, Send } from "lucide-react"
+import { MessageCircle, Send, ChevronDown } from "lucide-react"
 
 interface QuestionInputSectionProps {
   presetQuestions: string[]
@@ -22,6 +22,7 @@ export default function QuestionInputSection({
   onCustomQuestionSubmit,
 }: QuestionInputSectionProps) {
   const [isInputFocused, setIsInputFocused] = useState(false)
+  const [showPresetQuestions, setShowPresetQuestions] = useState(false)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && userQuestion.trim()) {
@@ -29,62 +30,28 @@ export default function QuestionInputSection({
     }
   }
 
+  const handlePresetQuestionSelect = (question: string) => {
+    onPresetQuestionClick(question)
+    setShowPresetQuestions(false)
+  }
+
   return (
-    <div style={{ padding: "0 20px 20px", position: "relative", zIndex: 10 }}>
+    <div style={{ padding: "0 20px 12px", position: "relative", zIndex: 10 }}>
       <div
         style={{
           backgroundColor: "rgba(54, 69, 79, 0.8)",
           borderRadius: "12px",
-          padding: "16px",
+          padding: "12px",
           backdropFilter: "blur(15px)",
           border: "1px solid rgba(255, 215, 0, 0.2)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
           <MessageCircle size={16} style={{ color: "#FFD700" }} />
           <h3 style={{ fontSize: "14px", fontWeight: "600", color: "#F5F5DC", margin: 0 }}>问题引导</h3>
         </div>
 
-        {/* Preset Questions */}
-        <div style={{ marginBottom: "12px" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {presetQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => onPresetQuestionClick(question)}
-                style={{
-                  padding: "6px 10px",
-                  backgroundColor:
-                    selectedPresetQuestion === question ? "rgba(255, 215, 0, 0.8)" : "rgba(54, 69, 79, 0.6)",
-                  color: selectedPresetQuestion === question ? "#1A237E" : "#F5F5DC",
-                  border: `1px solid ${selectedPresetQuestion === question ? "#FFD700" : "rgba(255, 215, 0, 0.3)"}`,
-                  borderRadius: "16px",
-                  fontSize: "11px",
-                  fontWeight: "500",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  backdropFilter: "blur(5px)",
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedPresetQuestion !== question) {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.2)"
-                    e.currentTarget.style.transform = "translateY(-1px)"
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedPresetQuestion !== question) {
-                    e.currentTarget.style.backgroundColor = "rgba(54, 69, 79, 0.6)"
-                    e.currentTarget.style.transform = "translateY(0)"
-                  }
-                }}
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Custom Question Input */}
+        {/* Combined Input and Dropdown */}
         <div style={{ position: "relative" }}>
           <input
             type="text"
@@ -96,7 +63,7 @@ export default function QuestionInputSection({
             onBlur={() => setIsInputFocused(false)}
             style={{
               width: "100%",
-              padding: "8px 40px 8px 12px",
+              padding: "6px 80px 6px 10px", // 右侧留出下拉按钮空间
               backgroundColor: "rgba(26, 35, 126, 0.3)",
               border: `1px solid ${isInputFocused ? "#FFD700" : "rgba(255, 215, 0, 0.3)"}`,
               borderRadius: "8px",
@@ -107,12 +74,51 @@ export default function QuestionInputSection({
               backdropFilter: "blur(5px)",
             }}
           />
+          
+          {/* Dropdown Button */}
+          <button
+            onClick={() => setShowPresetQuestions(!showPresetQuestions)}
+            style={{
+              position: "absolute",
+              right: "6px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "none",
+              border: "none",
+              color: "#FFD700",
+              cursor: "pointer",
+              padding: "4px",
+              borderRadius: "4px",
+              transition: "all 0.3s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: "2px",
+              fontSize: "10px",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.2)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent"
+            }}
+          >
+            推荐问题
+            <ChevronDown 
+              size={12} 
+              style={{ 
+                transform: showPresetQuestions ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease"
+              }} 
+            />
+          </button>
+
+          {/* Send Button (when user is typing) */}
           {userQuestion.trim() && (
             <button
               onClick={onCustomQuestionSubmit}
               style={{
                 position: "absolute",
-                right: "6px",
+                right: "70px", // 在下拉按钮左侧
                 top: "50%",
                 transform: "translateY(-50%)",
                 background: "none",
@@ -132,13 +138,60 @@ export default function QuestionInputSection({
               <Send size={14} style={{ color: "#FFD700" }} />
             </button>
           )}
+
+          {/* Preset Questions Dropdown */}
+          {showPresetQuestions && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                backgroundColor: "rgba(54, 69, 79, 0.95)",
+                borderRadius: "8px",
+                border: "1px solid rgba(255, 215, 0, 0.3)",
+                backdropFilter: "blur(15px)",
+                marginTop: "4px",
+                zIndex: 1000,
+                maxHeight: "200px",
+                overflowY: "auto",
+              }}
+            >
+              {presetQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePresetQuestionSelect(question)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    color: "#F5F5DC",
+                    fontSize: "12px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    borderBottom: index < presetQuestions.length - 1 ? "1px solid rgba(255, 215, 0, 0.1)" : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.2)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent"
+                  }}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Selected Question Display */}
         {(selectedPresetQuestion || userQuestion) && (
           <div
             style={{
-              marginTop: "8px",
+              marginTop: "6px",
               padding: "6px 10px",
               backgroundColor: "rgba(255, 215, 0, 0.2)",
               borderRadius: "6px",

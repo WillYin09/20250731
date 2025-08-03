@@ -63,7 +63,6 @@ export default function FavoritesPage() {
   }
 
   const handleViewReadingDetail = (reading: SavedReading) => {
-    console.log("Viewing reading detail:", reading)
     setSelectedReading(reading)
     setShowReadingDetail(true)
   }

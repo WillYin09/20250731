@@ -8,6 +8,11 @@ export interface TarotCardData {
   image: string
 }
 
+// 新增：表示带有正逆位状态的卡牌
+export interface TarotCardWithOrientation extends TarotCardData {
+  isReversed: boolean  // 使用 isReversed 而不是 reversed，避免字段名冲突
+}
+
 export const CARD_BACK_IMAGE = "/images/tarot/card-back.png"
 
 export const TAROT_CARDS: TarotCardData[] = [
@@ -822,17 +827,17 @@ export function getTarotCard(index: number): TarotCardData {
 /**
  * Return <count> random cards, each with a 30 % chance of being reversed.
  */
-export function getRandomTarotCards(count: number): Array<TarotCardData & { reversed: boolean }> {
+export function getRandomTarotCards(count: number): TarotCardWithOrientation[] {
   const shuffled = [...TAROT_CARDS].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, count).map((card) => ({
     ...card,
-    reversed: Math.random() < 0.3,
+    isReversed: Math.random() < 0.3,
   }))
 }
 
 /**
  * Convenience helper — select the correct meaning based on orientation.
  */
-export function getCardMeaning(card: TarotCardData, reversed: boolean): string {
-  return reversed ? card.reversed : card.normal
+export function getCardMeaning(card: TarotCardData, isReversed: boolean): string {
+  return isReversed ? card.reversed : card.normal
 }

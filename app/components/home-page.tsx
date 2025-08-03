@@ -118,17 +118,14 @@ export default function HomePage() {
   ]
 
   const handleSpreadClick = (spreadId: number) => {
-    console.log("Spread clicked:", spreadId)
     const spread = allCardSpreads.find((s) => s.id === spreadId)
     if (spread) {
-      console.log("Starting reading for:", spread.name)
       setCurrentSpread(spread.name)
       setShowReading(true)
     }
   }
 
   const handleBackToHome = () => {
-    console.log("Back to home")
     setShowReading(false)
     setSelectedSpread(null)
     setCurrentSpread("")
@@ -173,7 +170,7 @@ export default function HomePage() {
       {/* Welcome Section - 移动端优化 */}
       <div style={{ textAlign: "center", padding: "16px 0 0 0" }}>
         <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>抽张塔罗吧</h1>
-        <div style={{ fontStyle: "italic", color: "#D4AF37", fontSize: "13px", lineHeight: 1.4, maxWidth: 320, margin: "0 auto 8px auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+        <div style={{ fontStyle: "italic", color: "#D4AF37", fontSize: "13px", lineHeight: 1.4, maxWidth: 360, margin: "0 auto 8px auto", textAlign: "center", padding: "0 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {todayQuote.quote}
         </div>
       </div>

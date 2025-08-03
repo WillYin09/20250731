@@ -19,25 +19,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 优先尝试Qwen API
-    try {
-      const systemPrompt = `你是一位极具洞察力的情绪指引师，拥有深厚的心理学、哲学知识和丰富的人生阅历。请为用户提供**深入、细致、有启发性**的塔罗牌解读。
+    // 提取公共的优化 prompt 模板
+    const optimizedSystemPrompt = `你是一位极具洞察力的资深塔罗师，拥有深厚的心理学、哲学知识和丰富的人生阅历。请为用户提供**深入、温暖、有启发性**的塔罗牌解读。
 
 解读要求：
-1. 语言风格：神秘而温暖，富有诗意且富有哲理，能够触动人心
-2. 结构清晰：分为整体解读、深度分析、行动建议、祝福与展望四个部分
-3. **深度分析要求**：
-   - 每个部分内容可以适当展开，尤其是深度分析部分
-   - 请结合心理学、哲学、人生经验，深入剖析每张牌对用户问题的深层含义
-   - 分析卡牌之间的能量互动和整体象征意义
-   - 结合用户具体问题，给出个性化的深度洞察
-4. 个性化：结合用户问题和卡牌组合给出针对性建议
-5. 积极导向：即使是挑战性的卡牌也要给出建设性的指导
-6. **内容要求**：不要过于简短，每个部分可以适当展开，确保解读的深度和启发性
+1. **语言风格**：神秘而温暖，富有诗意且富有哲理，能够触动人心，直接与用户对话
+2. **结构清晰**：分为整体解读、深度分析、行动建议、祝福与展望四个部分
+3. **核心解读原则**：
+   - **故事串联**：不要单独解读每张牌，而是将牌阵串联成完整的故事线
+   - **情感共鸣**：使用"你"直接对话，承认困难但给出希望，用"虽然...但是..."的转折句式
+   - **具体化描述**：避免抽象概念，用具体场景和感受来描述，结合用户具体问题
+   - **专业平衡**：用通俗易懂的语言解释深奥概念，平衡专业性和可读性
+4. **深度分析要求**：
+   - 分析牌与牌之间的能量互动和因果关系
+   - 结合心理学、哲学、人生经验，深入剖析每张牌对用户问题的深层含义
+   - 强调"过去-现在-未来"的连贯性和发展脉络
+   - 给出个性化的深度洞察，而非通用解读
+5. **个性化**：结合用户问题和卡牌组合给出针对性建议
+6. **积极导向**：即使是挑战性的卡牌也要给出建设性的指导
+7. **格式要求**：纯文本输出，不要使用表格、符号、格式化标记，保持自然的段落结构
 
 请用中文回答，语调温和而充满智慧，让用户感受到深刻的洞察和温暖的指引。`
 
-      const userPrompt = `请为我解读这次${spreadType}指引：
+    const optimizedUserPrompt = `请为我解读这次${spreadType}指引：
 
 用户问题：${question || "寻求人生指引"}
 
@@ -49,23 +53,26 @@ ${cards
   )
   .join("\n")}
 
-请提供一个**深入、细致、有启发性**的解读，分为四个部分：整体解读、深度分析、行动建议、祝福与展望。
+请提供一个**深入、温暖、有启发性**的解读，分为四个部分：整体解读、深度分析、行动建议、祝福与展望。
 
 **特别要求**：
-- 整体解读：分析牌阵的整体能量和趋势，直接回应用户问题
-- 深度分析：详细解读每张牌的含义，分析牌与牌之间的关系，结合用户问题给出深层洞察
-- 行动建议：提供具体、实用的行动指导，包括短期和长期建议
-- 祝福与展望：给予温暖的鼓励和对未来的积极展望
+- **整体解读**：分析牌阵的整体能量和趋势，直接回应用户问题，感受整个故事的能量
+- **深度分析**：将牌阵串联成完整的故事线，分析牌与牌之间的关系和因果关系，结合用户问题给出深层洞察。使用"虽然...但是..."的转折句式，承认困难但给出希望
+- **行动建议**：提供具体、实用的行动指导，包括短期和长期建议，用具体场景描述
+- **祝福与展望**：给予温暖的鼓励和对未来的积极展望，直接与用户对话
+
+**格式要求**：纯文本输出，不要使用表格、符号、格式化标记，保持自然的段落结构，确保内容连贯流畅。
 
 请确保解读内容深入、有启发性，能够真正帮助用户理解和行动。`
 
+    // 优先尝试Qwen API
+    try {
       const aiResponse = await callQwenAPI([
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: optimizedSystemPrompt },
+        { role: "user", content: optimizedUserPrompt },
       ])
 
       if (aiResponse && aiResponse.trim().length > 50) {
-        console.log("✅ Qwen API解读成功生成")
         return NextResponse.json({
           text: aiResponse.trim(),
           success: true,
@@ -76,7 +83,7 @@ ${cards
       console.error("Qwen API调用失败，尝试DeepSeek兜底:", qwenError)
     }
 
-    // DeepSeek兜底
+    // DeepSeek兜底 - 使用相同的优化 prompt
     try {
       const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
         method: "POST",
@@ -87,38 +94,11 @@ ${cards
         body: JSON.stringify({
           model: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
           messages: [
-            {
-              role: "system",
-              content: `你是一位专业的情绪指引师，拥有深厚的心理学知识和直觉洞察力。请为用户提供准确、有洞察力的卡牌解读。
-
-解读要求：
-1. 语言风格：神秘而温暖，富有诗意但不失实用性
-2. 结构清晰：分为整体解读、深度分析、行动建议、祝福与展望四个部分
-3. 内容精炼：每个部分控制在100-150字以内，避免冗长
-4. 个性化：结合用户问题和卡牌组合给出针对性建议
-5. 积极导向：即使是挑战性的卡牌也要给出建设性的指导
-
-请用中文回答，语调温和而充满智慧。`,
-            },
-            {
-              role: "user",
-              content: `请为我解读这次${spreadType}指引：
-
-用户问题：${question || "寻求人生指引"}
-
-抽到的卡牌：
-${cards
-  .map(
-    (card, index) =>
-      `${index + 1}. ${card.translation || card.name} (${card.reversed ? "逆位" : "正位"}) - ${card.meaning || "深度洞察"}`,
-  )
-  .join("\n")}
-
-请提供一个结构清晰、内容精炼的解读，分为四个部分：整体解读、深度分析、行动建议、祝福与展望。每个部分控制在150字以内。`,
-            },
+            { role: "system", content: optimizedSystemPrompt },
+            { role: "user", content: optimizedUserPrompt },
           ],
           temperature: 0.8,
-          max_tokens: 1500,
+          max_tokens: 3000, // 增加 token 限制，支持更长的回复
         }),
       })
 
@@ -127,7 +107,6 @@ ${cards
         const aiText = aiData.choices?.[0]?.message?.content
 
         if (aiText && aiText.trim().length > 50) {
-          console.log("✅ DeepSeek API解读成功生成")
           return NextResponse.json({
             text: aiText.trim(),
             success: true,
