@@ -42,48 +42,7 @@ ${context ? `\n背景信息：${context}` : ""}`,
         })
       }
     } catch (qwenError) {
-      console.error("Qwen API调用失败，尝试SiliconFlow:", qwenError)
-    }
-
-    // 下面保留SiliconFlow原有API调用和fallback逻辑
-    try {
-      const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.SILICONFLOW_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek-ai/DeepSeek-V3",
-          messages: [
-            {
-              role: "system",
-              content: `你是一位经验丰富的情绪指引师，拥有深厚的心理学知识。请用温暖、智慧且略带启发性的语调回答用户的问题。\n\n回答要求：\n1. 控制在100-150字以内\n2. 语言要优美、富有诗意\n3. 给出实用的建议和指引\n4. 保持神秘而温暖的氛围\n5. 结合卡牌的智慧\n${context ? `\n背景信息：${context}` : ""}`,
-            },
-            {
-              role: "user",
-              content: message,
-            },
-          ],
-          max_tokens: 200,
-          temperature: 0.7,
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const aiResponse = data.choices[0]?.message?.content
-
-        if (aiResponse) {
-          return NextResponse.json({
-            success: true,
-            message: aiResponse,
-            source: "ai",
-          })
-        }
-      }
-    } catch (aiError) {
-      console.error("AI API调用失败:", aiError)
+      console.error("Qwen API调用失败，使用备用回答:", qwenError)
     }
 
     // 备用回答机制和错误处理保持不变

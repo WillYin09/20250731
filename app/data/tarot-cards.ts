@@ -8,9 +8,9 @@ export interface TarotCardData {
   image: string
 }
 
-// 新增：表示带有正逆位状态的卡牌
+// 表示带有正逆位状态的卡牌
 export interface TarotCardWithOrientation extends TarotCardData {
-  isReversed: boolean  // 使用 isReversed 而不是 reversed，避免字段名冲突
+  isReversed: boolean  // 使用 isReversed 表示是否逆位
 }
 
 export const CARD_BACK_IMAGE = "/images/tarot/card-back.png"

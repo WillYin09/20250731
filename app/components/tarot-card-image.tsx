@@ -10,7 +10,7 @@ interface TarotCardImageProps {
     name: string
     translation?: string
     image?: string
-    reversed?: boolean
+    isReversed?: boolean  // 修改为 isReversed
   }
   isRevealed?: boolean
   width?: number
@@ -31,6 +31,7 @@ export default function TarotCardImage({
   showPlaceholder = true,
   onClick,
 }: TarotCardImageProps) {
+
   const [imageState, setImageState] = useState<"idle" | "loading" | "loaded" | "error">("idle")
 
   // 重置状态当卡牌变化时
@@ -128,12 +129,15 @@ export default function TarotCardImage({
           <img
             src={card.image || "/placeholder.svg"}
             alt={card.translation || card.name}
+            className={card.isReversed ? "rotate-180" : ""}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              transition: "opacity 0.3s ease",
+              transition: "opacity 0.3s ease, transform 0.3s ease",
               opacity: 1,
+              transformOrigin: "center center",
+              willChange: "transform",
             }}
             loading="eager"
             onLoad={handleImageLoad}
@@ -144,6 +148,7 @@ export default function TarotCardImage({
         {/* 图片加载中或失败时显示占位符 */}
         {(imageState === "loading" || imageState === "error" || imageState === "idle") && showPlaceholder && (
           <div
+            className={card.isReversed ? "rotate-180" : ""}
             style={{
               width: "100%",
               height: "100%",
@@ -157,6 +162,8 @@ export default function TarotCardImage({
               padding: "8px",
               position: "relative",
               overflow: "hidden",
+              transition: "transform 0.3s ease",
+              transformOrigin: "center center",
             }}
           >
             {/* 背景装饰 */}
@@ -244,7 +251,7 @@ export default function TarotCardImage({
       </div>
 
       {/* 逆位标记 */}
-      {card.reversed && (
+      {card.isReversed && (
         <div
           style={{
             position: "absolute",
@@ -260,6 +267,7 @@ export default function TarotCardImage({
           }}
         />
       )}
+
     </div>
   )
 }

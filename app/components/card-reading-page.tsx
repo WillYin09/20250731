@@ -13,7 +13,7 @@ import TarotCardImage from "./tarot-card-image"
 import FormattedReading from "./formatted-reading"
 import QuestionInputSection from "./question-input-section"
 import { getPresetQuestions } from "../utils/text-processing"
-import { getCardMeaning, type TarotCardWithOrientation } from "../data/tarot-cards"
+import { getCardMeaning, type TarotCardWithOrientation, type TarotCardData } from "../data/tarot-cards"
 
 export interface CardReadingPageProps {
   spreadType: string
@@ -26,8 +26,8 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
     name: card.name,
     translation: card.translation,
     image: card.image,
-    reversed: card.isReversed,
-  })
+    isReversed: card.isReversed,
+  } as const)
 
   const {
     state,
@@ -460,7 +460,6 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 ...card,
                 image: card.image || "",
                 translation: card.translation || card.name,
-                reversed: card.reversed || false,
               }
 
               return (
@@ -514,7 +513,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                         )}
                       </div>
                       <p style={{ color: "#FFD700", fontWeight: "500", fontSize: "13px", margin: "0 0 3px 0" }}>
-                        {getCardMeaning(cardData, cardData.isReversed)}
+                        {getCardMeaning(cardData as TarotCardData, cardData.isReversed)}
                       </p>
                       <p style={{ color: "#D4AF37", fontSize: "11px", margin: 0 }}>
                         {spreadLayout.positions[index].description}
@@ -549,14 +548,14 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 <span style={{ color: "#FFD700", fontSize: "15px" }}>正在思考...</span>
               </div>
             ) : (
-              <FormattedReading content={state.comprehensiveSummary} />
+              <FormattedReading content={state.comprehensiveSummary} cards={state.revealedCards} />
             )}
           </div>
 
           {/* AI Chat Section */}
           {!state.isLoadingReading && state.comprehensiveSummary && (
             <div style={{ padding: "0 20px 30px" }}>
-              <AIChatSection cards={state.revealedCards} spreadType={spreadType} onInitialReading={true} />
+              <AIChatSection cards={state.revealedCards} question={state.userQuestion || state.selectedPresetQuestion || "寻求人生指导"} />
             </div>
           )}
 
@@ -644,7 +643,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
               card,
               position: spreadLayout.positions[index].label,
               meaning: getCardMeaning(card, card.isReversed),
-              reversed: card.reversed,
+              reversed: card.isReversed,
             })),
             summary: state.comprehensiveSummary,
             date: new Date().toLocaleDateString("zh-CN"),
@@ -1044,7 +1043,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         <div style={{ textAlign: "center", marginBottom: "6px" }}>
           <p style={{ color: "#D4AF37", fontSize: "12px" }}>
             {state.selectedCards.length === totalCards
-              ? "点击查看牌阵解读"
+              ? ""
               : state.phase === "selecting"
                 ? "左右滑动并根据你的直觉选择，单击即可选中"
                 : "正在为您揭示命运的奥秘..."}

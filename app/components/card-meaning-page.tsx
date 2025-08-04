@@ -35,11 +35,18 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
       if (selectedCategory === "major") {
         cards = cards.filter(
           (card) =>
-            !card.name.includes("of") &&
-            !card.name.includes("Page") &&
-            !card.name.includes("Knight") &&
-            !card.name.includes("Queen") &&
-            !card.name.includes("King"),
+            card.name.startsWith("The ") ||
+            card.name === "Strength" ||
+            card.name === "Justice" ||
+            card.name === "Temperance" ||
+            card.name === "Death" ||
+            card.name === "Devil" ||
+            card.name === "Tower" ||
+            card.name === "Star" ||
+            card.name === "Moon" ||
+            card.name === "Sun" ||
+            card.name === "Judgement" ||
+            card.name === "World"
         )
       } else if (selectedCategory === "wands") {
         cards = cards.filter((card) => card.name.includes("Wands"))
@@ -172,10 +179,11 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
           <Filter className="w-4 h-4" style={{ color: "#FFD700" }} />
           <span style={{ fontSize: "14px", fontWeight: "500", color: "#F5F5DC" }}>分类筛选</span>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", position: "relative", zIndex: 50 }}>
           {categories.map((category) => (
             <button
               key={category.id}
+              type="button"
               onClick={() => setSelectedCategory(category.id)}
               style={{
                 padding: "6px 12px",
@@ -187,6 +195,10 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
                 cursor: "pointer",
                 transition: "all 0.2s ease",
                 fontWeight: selectedCategory === category.id ? "600" : "400",
+                position: "relative",
+                zIndex: 100,
+                pointerEvents: "auto",
+                userSelect: "none",
               }}
               onMouseEnter={(e) => {
                 if (selectedCategory !== category.id) {

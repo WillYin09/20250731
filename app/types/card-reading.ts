@@ -41,11 +41,17 @@ export interface TarotCardData {
   image: string
   meaning: string
   description: string
-  reversed: boolean
+  normal: string
+  reversed: string
   keywords: string[]
   element?: string
   planet?: string
   zodiac?: string
+}
+
+// 表示带有正逆位状态的卡牌
+export interface TarotCardWithOrientation extends TarotCardData {
+  isReversed: boolean  // 使用 isReversed 表示是否逆位
 }
 
 export interface SpreadPosition {

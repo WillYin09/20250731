@@ -16,13 +16,11 @@ cp env.example .env.local
 
 # 编辑 .env.local 文件，填入真实密钥
 ALIYUN_QWEN_API_KEY=your_real_qwen_key
-NEXT_PUBLIC_SILICONFLOW_API_TOKEN=your_real_deepseek_token
 ```
 
 #### 生产环境
 在云平台控制台中设置环境变量：
 - `ALIYUN_QWEN_API_KEY`
-- `NEXT_PUBLIC_SILICONFLOW_API_TOKEN`
 
 ### 3. 代码安全检查清单
 

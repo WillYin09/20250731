@@ -65,7 +65,7 @@ ${cards
 
 请确保解读内容深入、有启发性，能够真正帮助用户理解和行动。`
 
-    // 优先尝试Qwen API
+    // 调用Qwen API
     try {
       const aiResponse = await callQwenAPI([
         { role: "system", content: optimizedSystemPrompt },
@@ -80,44 +80,7 @@ ${cards
         })
       }
     } catch (qwenError) {
-      console.error("Qwen API调用失败，尝试DeepSeek兜底:", qwenError)
-    }
-
-    // DeepSeek兜底 - 使用相同的优化 prompt
-    try {
-      const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.SILICONFLOW_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
-          messages: [
-            { role: "system", content: optimizedSystemPrompt },
-            { role: "user", content: optimizedUserPrompt },
-          ],
-          temperature: 0.8,
-          max_tokens: 3000, // 增加 token 限制，支持更长的回复
-        }),
-      })
-
-      if (response.ok) {
-        const aiData = await response.json()
-        const aiText = aiData.choices?.[0]?.message?.content
-
-        if (aiText && aiText.trim().length > 50) {
-          return NextResponse.json({
-            text: aiText.trim(),
-            success: true,
-            source: "deepseek",
-          })
-        }
-      }
-
-      console.log("⚠️ AI响应无效，使用备用解读")
-    } catch (aiError) {
-      console.error("DeepSeek API调用失败:", aiError)
+      console.error("Qwen API调用失败，使用备用解读:", qwenError)
     }
 
     // 备用回答机制和错误处理保持不变
