@@ -21,4 +21,4 @@ RUN pnpm build
 EXPOSE 3000
 
 # Start Next.js server (SSR/API enabled), listen on 0.0.0.0:$PORT
-CMD ["sh", "-c", "pnpm start -- -H 0.0.0.0 -p $PORT"] 
+CMD ["sh", "-c", "pnpm start -H 0.0.0.0 -p $PORT"] 
