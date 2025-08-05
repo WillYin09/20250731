@@ -9,7 +9,8 @@
     "dev:clean": "node scripts/dev-clean.js && next dev",
     "dev:reset": "node scripts/dev-clean.js && pnpm install && next dev",
     "lint": "next lint",
-    "start": "next start"
+    "preinstall": "npm install -g pnpm && pnpm install",
+    "start": "next start -p $PORT"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

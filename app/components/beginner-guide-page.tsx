@@ -311,44 +311,7 @@ description: "通过指引逐步解锁78张卡牌，学习每张牌的深层含�
         </div>
       </div>
 
-      {/* Call to Action */}
-      <div style={{ padding: "0 20px 40px" }}>
-        <Card
-          className="border-0 shadow-md"
-          style={{
-            background: "linear-gradient(135deg, #FFD700 0%, #B8860B 100%)",
-          }}
-        >
-          <div style={{ padding: "24px", textAlign: "center", color: "white" }}>
-            <Sparkles className="w-8 h-8" style={{ margin: "0 auto 16px" }} />
-            <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>准备好开始你的指引之旅了吗？</h2>
-            <p style={{ fontSize: "14px", opacity: 0.9, marginBottom: "16px" }}>
-              点击下方按钮，返回主页开始你的第一次指引体验
-            </p>
-            <Button
-              onClick={onBack}
-              style={{
-                backgroundColor: "white",
-                color: "#FFD700",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f9fafb"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "white"
-              }}
-            >
-              开始指引
-            </Button>
-          </div>
-        </Card>
-      </div>
+
     </div>
   )
 }
