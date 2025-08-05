@@ -1092,7 +1092,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                   left: `calc(50% + ${x}px - 30px)`,
                   bottom: `${25 + y}px`,
                   transform: `rotate(${angle}deg) ${isHovered ? "scale(1.1) translateY(-12px)" : ""}`,
-                  zIndex: isHovered ? 20 : 15 - Math.abs(index - Math.floor(totalCards / 2)),
+                  zIndex: isHovered ? 20 : 10,
                   opacity: isSelected ? 0.3 : 0.9,
                   pointerEvents: state.phase === "selecting" && !isSelected ? "auto" : "none",
                   filter: isHovered ? "brightness(1.1) drop-shadow(0 0 10px rgba(255, 215, 0, 0.5))" : "none",

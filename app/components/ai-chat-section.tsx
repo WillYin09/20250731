@@ -16,10 +16,10 @@ interface Message {
 
 interface AiChatSectionProps {
   cards: TarotCardWithOrientation[]
-  question: string
+  question?: string
 }
 
-export default function AiChatSection({ cards, question }: AiChatSectionProps) {
+export default function AiChatSection({ cards, question = "寻求人生指导" }: AiChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -96,7 +96,7 @@ export default function AiChatSection({ cards, question }: AiChatSectionProps) {
     }
     
     for (const [keyword, question] of Object.entries(questionKeywords)) {
-      if (userQuestion.includes(keyword)) {
+      if (userQuestion && userQuestion.includes(keyword)) {
         questions.push(question)
         break
       }

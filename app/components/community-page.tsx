@@ -1,148 +1,287 @@
 "use client"
 
 import { useState } from "react"
-import { MessageCircle, Heart, Share2, Plus, TrendingUp, Users, Sparkles } from "lucide-react"
+import { MessageCircle, Heart, Share2, Plus, TrendingUp, Users, Sparkles, BookOpen, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import PostDetailModal from "./post-detail-modal"
-import CommentModal from "./comment-modal"
-import SharePostModal from "./share-post-modal"
+import KnowledgeDetailModal from "./knowledge-detail-modal"
 import CardMeaningPage from "./card-meaning-page"
 import DivinationSkillsPage from "./divination-skills-page"
 import BeginnerGuidePage from "./beginner-guide-page"
 import CardReadingPage from "./card-reading-page"
 
-interface Post {
+interface KnowledgeArticle {
   id: number
-  user: {
-    name: string
-    avatar: string
-    level: string
-    verified: boolean
-  }
+  title: string
+  author: string
+  avatar: string
+  level: string
+  verified: boolean
   content: string
-  fullContent?: string
-  image: boolean
-  likes: number
-  comments: number
-  time: string
+  fullContent: string
+  category: string
   tags: string[]
-  isLiked?: boolean
-  shareCount?: number
+  readTime: string
+  difficulty: string
 }
 
 export default function CommunityPage() {
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
-  const [commentModalPost, setCommentModalPost] = useState<Post | null>(null)
-  const [shareModalPost, setShareModalPost] = useState<Post | null>(null)
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null)
   const [currentView, setCurrentView] = useState("main") // main, cardMeaning, divinationSkills, beginnerGuide, threeCardReading
-  const [posts, setPosts] = useState<Post[]>([
+
+  const knowledgeArticles: KnowledgeArticle[] = [
     {
       id: 1,
-      user: { name: "精选内容", avatar: "🔮", level: "牌意解读", verified: true },
-      content: "愚者牌的深层含义：代表纯真、新的开始和无限的可能性。当这张牌出现时，通常意味着新的旅程即将开始...",
-      fullContent: `愚者牌的深层含义：代表纯真、新的开始和无限的可能性。当这张牌出现时，通常意味着新的旅程即将开始。
+      title: "愚者牌的深层心理学解读",
+      author: "塔罗心理学专家",
+      avatar: "🧠",
+      level: "专家",
+      verified: true,
+      content: "愚者牌在心理学层面代表原始自我（Primitive Self）的显现。荣格认为，愚者象征着个体化过程中最纯真的状态，是集体无意识的原型之一...",
+      fullContent: `愚者牌的深层心理学解读
 
-🌟 **正位含义**：
-- 新的旅程即将开始
-- 保持开放和好奇的心态
-- 相信直觉，勇敢迈出第一步
-- 释放过去的束缚，拥抱未知
+愚者牌在心理学层面代表原始自我（Primitive Self）的显现。荣格认为，愚者象征着个体化过程中最纯真的状态，是集体无意识的原型之一。
 
-⚠️ **逆位含义**：
-- 可能过于鲁莽或缺乏计划
-- 需要更多的准备和思考
-- 避免盲目的冒险
+🧠 心理学视角
 
-愚者牌提醒我们要保持初心，像孩子一样对世界充满好奇。即使前路未卜，也要相信自己的内在智慧。`,
-      image: true,
-      likes: 24,
-      comments: 8,
-      time: "精选",
-      tags: ["愚者牌", "牌意解读"],
-      isLiked: false,
-      shareCount: 5,
+1. 原始自我原型
+愚者代表人类最原始、最纯真的心理状态，不受社会规范约束，完全按照本能行事。这种状态在心理学上被称为"原始自我"。
+
+2. 无意识的力量
+愚者的行为看似鲁莽，实则体现了深层无意识的智慧。他相信直觉，不受理性思维的限制，这正是创造力的源泉。
+
+3. 回归本真
+在现代社会中，我们往往被各种规则和期望束缚。愚者提醒我们要回归内心的纯真，重新连接内在的智慧。
+
+💡 深层含义
+
+- 信任直觉：愚者教导我们相信内在的声音
+- 拥抱未知：对未知保持开放和好奇的态度
+- 释放束缚：放下社会期待，做真实的自己
+- 创造性思维：突破常规思维，寻找新的可能性
+
+🎯 实践应用
+
+当愚者牌出现时，可能意味着：
+- 需要重新审视自己的人生方向
+- 应该相信直觉而不是过度分析
+- 是时候尝试新的可能性
+- 需要回归内心的纯真状态
+
+愚者牌提醒我们，真正的智慧往往来自内心的纯真，而不是外在的知识。`,
+      category: "心理学深度解析",
+      tags: ["愚者牌", "心理学", "荣格理论", "原型"],
+      readTime: "8分钟",
+      difficulty: "专家",
     },
     {
       id: 2,
-      user: { name: "指引技巧", avatar: "⭐", level: "解读方法", verified: false },
-      content: "三牌阵解读技巧：过去-现在-未来要结合起来看，形成完整的故事线。很多新手会单独分析每张牌...",
-      fullContent: `三牌阵解读技巧：过去-现在-未来要结合起来看，形成完整的故事线。
+      title: "塔罗牌阵的心理学基础",
+      author: "塔罗治疗师",
+      avatar: "🎯",
+      level: "专家",
+      verified: true,
+      content: "塔罗牌阵不仅仅是占卜工具，更是心理投射的载体。每个牌位都对应着不同的心理层面，通过系统性的排列...",
+      fullContent: `塔罗牌阵的心理学基础
 
-很多新手在解读三牌阵时，会单独分析每张牌的含义，但其实最重要的是要把三张牌连接起来，形成一个完整的故事。
+塔罗牌阵不仅仅是占卜工具，更是心理投射的载体。每个牌位都对应着不同的心理层面，通过系统性的排列，能够帮助我们更深入地理解自己的内心世界。
 
-📖 **解读步骤**：
+🧠 心理学原理
 
-1. **整体观察**：先看三张牌的整体感觉，是积极的还是需要注意的？
+1. 投射理论
+塔罗牌阵利用心理投射原理，让无意识的内容通过图像符号显现出来。当我们选择特定位置的牌时，实际上是在投射自己的心理状态。
 
-2. **寻找连接**：
-   - 过去的经历如何影响现在？
-   - 现在的状态会如何发展到未来？
-   - 三张牌之间有什么共同的主题？
+2. 象征性思维
+塔罗牌阵中的每个位置都有其象征意义，对应着不同的心理功能：
+- 意识层面：理性思维、逻辑分析
+- 前意识：记忆、经验、习惯
+- 无意识：深层欲望、恐惧、原型
 
-3. **故事叙述**：用讲故事的方式把三张牌串联起来，这样解读会更有说服力。
+3. 系统性思维
+牌阵通过特定的排列方式，创造了一个完整的心理地图，帮助我们系统性地探索内心世界。
 
-💡 **实例分析**：
-假设抽到：过去-高塔，现在-星星，未来-太阳
-故事线：经历了突然的变化和破坏（高塔），现在正在重新找到希望和方向（星星），未来将迎来光明和成功（太阳）。`,
-      likes: 56,
-      comments: 12,
-      time: "精选",
-      tags: ["三牌阵", "解读技巧"],
-      isLiked: true,
-      shareCount: 12,
+🎯 经典牌阵解析
+
+三牌阵（过去-现在-未来）
+- 过去：影响当前情况的根源，对应前意识
+- 现在：当前的心理状态，对应意识
+- 未来：潜在的发展方向，对应无意识
+
+凯尔特十字
+- 中心：核心问题，对应自我
+- 十字：外在环境，对应人格面具
+- 基础：深层原因，对应阴影
+- 目标：理想状态，对应自性
+
+💡 实践技巧
+
+1. 建立连接
+在解读牌阵时，要寻找牌与牌之间的连接，理解它们如何共同讲述一个完整的故事。
+
+2. 深度探索
+不要满足于表面的解释，要深入探索每张牌在当前位置的特殊含义。
+
+3. 整合理解
+将牌阵作为一个整体来理解，而不是孤立地解读每张牌。
+
+塔罗牌阵是探索内心世界的强大工具，通过系统性的排列和深度的解读，能够帮助我们更好地理解自己。`,
+      category: "牌阵理论",
+      tags: ["牌阵", "心理学", "投射理论", "系统性思维"],
+      readTime: "12分钟",
+      difficulty: "专家",
     },
     {
       id: 3,
-      user: { name: "新手指南", avatar: "🌙", level: "基础知识", verified: false },
-      content: "转变牌的含义解析：转变牌不是真的结束，而是代表转变和转化。这张牌提醒我们...",
-      fullContent: `转变牌的含义解析：转变牌不是真的结束，而是代表转变和转化。这张牌提醒我们：
+      title: "塔罗牌与荣格原型理论",
+      author: "深度心理学研究者",
+      avatar: "🌌",
+      level: "专家",
+      verified: true,
+      content: "塔罗牌与荣格的集体无意识理论有着深刻的联系。大阿卡纳牌实际上对应着荣格提出的主要原型...",
+      fullContent: `塔罗牌与荣格原型理论
 
-🔄 **核心含义**：
-- 结束与开始：一个阶段的结束，新阶段的开始
-- 转变与转化：内在的成长和外在的变化
-- 释放与重生：放下旧有的束缚，迎接新的可能
+塔罗牌与荣格的集体无意识理论有着深刻的联系。大阿卡纳牌实际上对应着荣格提出的主要原型，这些原型是人类心理的普遍模式。
 
-💡 **解读要点**：
-- 不要被表面的"结束"吓到
-- 关注转变带来的积极影响
-- 理解变化是成长的必经之路
+🧠 原型对应关系
 
-转变牌教导我们，变化虽然令人不安，但却是生命进化的自然过程。`,
-      likes: 18,
-      comments: 15,
-      time: "精选",
-      tags: ["转变牌", "新手指南"],
-      isLiked: false,
-      shareCount: 3,
+1. 愚者 - 原始自我原型
+代表最纯真的心理状态，不受社会规范约束，完全按照本能行事。
+
+2. 魔术师 - 自我原型
+代表意识的整合能力，能够协调内在的各种力量。
+
+3. 女祭司 - 阿尼玛原型
+代表内在的直觉和智慧，是男性心理中的女性面向。
+
+4. 女皇 - 母亲原型
+代表滋养、创造和丰盛，是生命力的象征。
+
+5. 皇帝 - 父亲原型
+代表权威、结构和秩序，是理性思维的象征。
+
+6. 教皇 - 智慧老人原型
+代表精神指导和传统智慧，是内在导师的象征。
+
+7. 恋人 - 阿尼玛/阿尼姆斯原型
+代表内在的阴阳平衡，是完整性的象征。
+
+8. 战车 - 英雄原型
+代表意志力和自我控制，是克服困难的象征。
+
+💡 深层含义
+
+原型的作用：
+- 提供心理发展的路线图
+- 帮助理解内在的动力
+- 指导个体化过程
+- 连接集体无意识
+
+🎯 实践应用
+
+在塔罗解读中运用原型理论：
+1. 识别当前活跃的原型
+2. 理解原型之间的互动
+3. 指导心理发展过程
+4. 促进内在整合
+
+塔罗牌是探索原型的强大工具，通过理解原型，我们能够更深入地理解自己和他人。`,
+      category: "深度心理学",
+      tags: ["荣格理论", "原型", "集体无意识", "个体化"],
+      readTime: "15分钟",
+      difficulty: "专家",
     },
-  ])
+    {
+      id: 4,
+      title: "塔罗牌中的阴影工作",
+      author: "阴影治疗师",
+      avatar: "🌑",
+      level: "专家",
+      verified: true,
+      content: "阴影是荣格心理学中的重要概念，指我们不愿意承认的内在面向。塔罗牌中的某些牌特别适合进行阴影工作...",
+      fullContent: `塔罗牌中的阴影工作
+
+阴影是荣格心理学中的重要概念，指我们不愿意承认的内在面向。塔罗牌中的某些牌特别适合进行阴影工作，帮助我们整合被压抑的部分。
+
+🌑 阴影的本质
+
+阴影包含：
+- 被社会否定的特质
+- 我们不愿意承认的欲望
+- 童年时期被压抑的面向
+- 集体无意识中的负面原型
+
+🧠 塔罗牌中的阴影表现
+
+1. 恶魔牌 - 欲望的阴影
+代表被压抑的欲望和本能，提醒我们承认和整合这些面向。
+
+2. 高塔牌 - 幻想的阴影
+代表被打破的虚假自我，是真实自我的显现。
+
+3. 月亮牌 - 恐惧的阴影
+代表内在的恐惧和不确定性，需要被理解和接纳。
+
+4. 死神牌 - 改变的阴影
+代表对改变的恐惧，实际上是转化的开始。
+
+💡 阴影工作技巧
+
+1. 识别阴影
+- 观察哪些牌让你感到不舒服
+- 注意你的情绪反应
+- 探索这些反应的根源
+
+2. 接纳阴影
+- 不要试图消除阴影
+- 理解阴影的积极作用
+- 学会与阴影共处
+
+3. 整合阴影
+- 将阴影特质融入意识
+- 找到建设性的表达方式
+- 实现内在的平衡
+
+🎯 实践方法
+
+阴影工作练习：
+1. 选择一张让你感到不舒服的牌
+2. 深入探索这种不适感
+3. 理解这种反应的根源
+4. 寻找建设性的表达方式
+
+阴影工作是塔罗牌深度应用的重要方面，通过面对和整合阴影，我们能够实现更完整的自我。`,
+      category: "阴影工作",
+      tags: ["阴影", "荣格理论", "心理整合", "自我接纳"],
+      readTime: "10分钟",
+      difficulty: "专家",
+    },
+  ]
 
   const topics = [
     {
       name: "每日指引",
-      count: 1234,
+      count: "立刻抽牌",
       trend: "up",
       color: "bg-primary-100 text-primary-700",
       action: "threeCardReading",
     },
     {
       name: "牌意解读",
-      count: 856,
+      count: "78张卡牌详解",
       trend: "up",
       color: "bg-secondary-100 text-secondary-700",
       action: "cardMeaning",
     },
     {
       name: "指引技巧",
-      count: 642,
-      trend: "down",
+      count: "牌阵、牌位、提问技巧",
+      trend: "up",
       color: "bg-accent-100 text-accent-700",
       action: "divinationSkills",
     },
     {
       name: "新手指南",
-      count: 423,
+      count: "从0~1入门指南",
       trend: "up",
       color: "bg-pink-100 text-pink-700",
       action: "beginnerGuide",
@@ -157,34 +296,8 @@ export default function CommunityPage() {
     setCurrentView("main")
   }
 
-  const handleLike = (postId: number) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post.id === postId) {
-          const isLiked = !post.isLiked
-          return {
-            ...post,
-            isLiked,
-            likes: isLiked ? post.likes + 1 : post.likes - 1,
-          }
-        }
-        return post
-      }),
-    )
-  }
-
-  const handleAddComment = (postId: number, comment: string) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: post.comments + 1,
-          }
-        }
-        return post
-      }),
-    )
+  const handleArticleClick = (article: KnowledgeArticle) => {
+    setSelectedArticle(article)
   }
 
   // Render different views based on currentView
@@ -204,55 +317,20 @@ export default function CommunityPage() {
     return <CardReadingPage spreadType="三牌阵" onBack={handleBackToMain} />
   }
 
-  // Main community view
+  // Main knowledge view
   return (
     <>
       <div className="space-y-6 pb-8 starry-background min-h-screen">
         {/* Header - 移动端优化 */}
-        <div className="flex items-center justify-between pt-4 px-4">
+        <div className="flex items-center pt-4 px-4">
           <div>
             <h1 className="serif-font text-xl font-bold" style={{ color: "#F5F5DC" }}>
-              经验分享
+              知识学习
             </h1>
             <p className="text-sm" style={{ color: "#D4AF37" }}>
-              精选卡牌知识与指引心得
+              精选塔罗牌知识与学习技巧
             </p>
           </div>
-          <Button
-            className="text-white ripple-effect text-sm px-3 py-2 border-0"
-            style={{
-              background: "linear-gradient(135deg, #FFD700 0%, #B8860B 100%)",
-              boxShadow: "0 4px 15px rgba(255, 215, 0, 0.3)",
-            }}
-            onClick={() => {
-              // 检测是否为微信小程序环境
-              const isWeChatMiniProgram = typeof wx !== 'undefined' && wx.shareAppMessage
-              
-              if (isWeChatMiniProgram) {
-                // 微信小程序环境
-                wx.shareAppMessage({
-                  title: '我在抽张塔罗吧获得了指引',
-                  path: '/pages/index/index'
-                })
-              } else {
-                // Web环境下的分享逻辑
-                if (navigator.share) {
-                  navigator.share({
-                    title: '抽张塔罗吧 - 经验分享',
-                    text: '我在抽张塔罗吧获得了指引，推荐给你！',
-                    url: window.location.href
-                  })
-                } else {
-                  // 复制链接到剪贴板
-                  navigator.clipboard.writeText(window.location.href)
-                  alert('链接已复制到剪贴板')
-                }
-              }
-            }}
-          >
-            <Share2 className="w-4 h-4 mr-1" />
-            分享
-          </Button>
         </div>
 
         {/* Hot Topics - 移动端优化 */}
@@ -292,38 +370,46 @@ export default function CommunityPage() {
                       {topic.trend === "up" ? "↗" : "↘"}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: "#D4AF37" }}>
-                    <Users className="w-3 h-3" />
-                    {topic.count.toLocaleString()} 阅读
-                  </div>
+                                      <div className="flex items-center gap-1 text-xs" style={{ color: "#D4AF37" }}>
+                      <BookOpen className="w-3 h-3" />
+                      {topic.count}
+                    </div>
                 </div>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Posts - 移动端优化 */}
-        <div className="space-y-3 px-4">
-          {posts.map((post) => (
+        {/* Knowledge Articles - 移动端优化 */}
+                  <div className="space-y-3 px-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BookOpen className="w-4 h-4" style={{ color: "#FFD700" }} />
+              <h2 className="serif-font text-base font-semibold" style={{ color: "#F5F5DC" }}>
+                深度知识
+              </h2>
+            </div>
+
+          {knowledgeArticles.map((article) => (
             <Card
-              key={post.id}
-              className="border-0 shadow-md hover:shadow-lg transition-all duration-300"
+              key={article.id}
+              className="border-0 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               style={{
                 backgroundColor: "rgba(54, 69, 79, 0.9)",
                 border: "1px solid rgba(255, 215, 0, 0.2)",
                 backdropFilter: "blur(15px)",
               }}
+              onClick={() => handleArticleClick(article)}
             >
               <div className="p-4 space-y-3">
-                {/* User info - 移动端优化 */}
+                {/* Article header */}
                 <div className="flex items-center gap-3">
-                  <div className="text-xl">{post.user.avatar}</div>
+                  <div className="text-xl">{article.avatar}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm truncate" style={{ color: "#F5F5DC" }}>
-                        {post.user.name}
+                        {article.author}
                       </span>
-                      {post.user.verified && (
+                      {article.verified && (
                         <div
                           className="w-3 h-3 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{ backgroundColor: "#3b82f6" }}
@@ -334,124 +420,56 @@ export default function CommunityPage() {
                       <span
                         className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 border"
                         style={{
-                          backgroundColor:
-                            post.user.level === "大师"
-                              ? "rgba(255, 215, 0, 0.1)"
-                              : post.user.level === "进阶"
-                                ? "rgba(147, 51, 234, 0.1)"
-                                : "rgba(107, 114, 128, 0.1)",
-                          color:
-                            post.user.level === "大师" ? "#FFD700" : post.user.level === "进阶" ? "#9333ea" : "#6b7280",
-                          borderColor:
-                            post.user.level === "大师"
-                              ? "rgba(255, 215, 0, 0.3)"
-                              : post.user.level === "进阶"
-                                ? "rgba(147, 51, 234, 0.3)"
-                                : "rgba(107, 114, 128, 0.3)",
+                          backgroundColor: "rgba(255, 215, 0, 0.1)",
+                          color: "#FFD700",
+                          borderColor: "rgba(255, 215, 0, 0.3)",
                         }}
                       >
-                        {post.user.level}
+                        {article.difficulty}
                       </span>
                     </div>
+                  </div>
+                  <ArrowRight size={16} style={{ color: "#D4AF37" }} />
+                </div>
+
+                {/* Article title */}
+                <h3 className="font-semibold text-base" style={{ color: "#F5F5DC" }}>
+                  {article.title}
+                </h3>
+
+                {/* Article content */}
+                <p className="text-sm leading-relaxed" style={{ color: "#D4AF37" }}>
+                  {article.content}
+                </p>
+
+                {/* Article meta */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs" style={{ color: "#D4AF37" }}>
-                      {post.time}
+                      {article.readTime}
+                    </span>
+                    <span className="text-xs" style={{ color: "#6b7280" }}>
+                      •
+                    </span>
+                    <span className="text-xs" style={{ color: "#D4AF37" }}>
+                      {article.category}
                     </span>
                   </div>
-                </div>
-
-                {/* Content - Clickable */}
-                <div onClick={() => setSelectedPost(post)} className="cursor-pointer">
-                  <p className="text-sm leading-relaxed" style={{ color: "#F5F5DC" }}>
-                    {post.content}
-                  </p>
-
-                  {/* Image placeholder */}
-                  {post.image && (
-                    <div
-                      className="w-full h-24 rounded-lg flex items-center justify-center mt-3"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(184, 134, 11, 0.1) 100%)",
-                        border: "1px solid rgba(255, 215, 0, 0.2)",
-                      }}
-                    >
-                      <Sparkles className="w-6 h-6" style={{ color: "#FFD700" }} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Tags - 移动端优化 */}
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-2 py-1 rounded-full border"
-                      style={{
-                        backgroundColor: "rgba(255, 215, 0, 0.1)",
-                        color: "#FFD700",
-                        borderColor: "rgba(255, 215, 0, 0.3)",
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Actions - 移动端优化 */}
-                <div className="flex items-center gap-4 pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-0 transition-colors duration-200 text-sm hover:bg-transparent"
-                    style={{
-                      color: post.isLiked ? "#ef4444" : "#D4AF37",
-                    }}
-                    onClick={() => handleLike(post.id)}
-                    onMouseEnter={(e) => {
-                      if (!post.isLiked) {
-                        e.currentTarget.style.color = "#ef4444"
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!post.isLiked) {
-                        e.currentTarget.style.color = "#D4AF37"
-                      }
-                    }}
-                  >
-                    <Heart className={`w-4 h-4 mr-1 ${post.isLiked ? "fill-current" : ""}`} />
-                    收藏
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-0 text-sm hover:bg-transparent"
-                    style={{ color: "#D4AF37" }}
-                    onClick={() => setSelectedPost(post)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#3b82f6"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#D4AF37"
-                    }}
-                  >
-                    <MessageCircle className="w-4 h-4 mr-1" />
-                    详情
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-0 text-sm hover:bg-transparent"
-                    style={{ color: "#D4AF37" }}
-                    onClick={() => setShareModalPost(post)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#10b981"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#D4AF37"
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-1" />
-                    分享
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {article.tags.slice(0, 2).map((tag, index) => (
+                      <span
+                        key={index}
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: "rgba(255, 215, 0, 0.1)",
+                          color: "#FFD700",
+                          border: "1px solid rgba(255, 215, 0, 0.2)",
+                        }}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -459,24 +477,12 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {/* Modals */}
-      <PostDetailModal
-        isOpen={!!selectedPost}
-        onClose={() => setSelectedPost(null)}
-        post={selectedPost}
-        onLike={handleLike}
-        onComment={(post) => setCommentModalPost(post)}
-        onShare={(post) => setShareModalPost(post)}
+      {/* Article Detail Modal */}
+      <KnowledgeDetailModal
+        isOpen={!!selectedArticle}
+        onClose={() => setSelectedArticle(null)}
+        article={selectedArticle}
       />
-
-      <CommentModal
-        isOpen={!!commentModalPost}
-        onClose={() => setCommentModalPost(null)}
-        post={commentModalPost}
-        onAddComment={handleAddComment}
-      />
-
-      <SharePostModal isOpen={!!shareModalPost} onClose={() => setShareModalPost(null)} post={shareModalPost} />
     </>
   )
 }

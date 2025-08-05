@@ -298,7 +298,7 @@ export default function SavedReadingDetailModal({ isOpen, onClose, reading }: Sa
               <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#333", marginBottom: "16px" }}>
                 牌阵详情 ({reading.cards.length} 张牌)
               </h3>
-              <div style={{ space: "16px" }}>
+              <div style={{ gap: "16px" }}>
                 {reading.cards.map((card, index) => {
                   const cardDetails = getCardDetails(card.name)
                   return (
@@ -355,13 +355,20 @@ export default function SavedReadingDetailModal({ isOpen, onClose, reading }: Sa
               <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#333", marginBottom: "16px" }}>继续探讨</h3>
               <div style={{ backgroundColor: "#f8f9fa", borderRadius: "12px", padding: "16px" }}>
                 <AIChatSection
-                  cards={reading.cards.map((card) => ({
-                    name: card.name,
-                    meaning: card.meaning,
-                    reversed: false, // 从收藏记录中无法获取逆位信息，默认为正位
-                  }))}
-                  spreadType={reading.spreadType}
-                  onInitialReading={false}
+                  cards={reading.cards.map((card) => {
+                    const cardDetails = getCardDetails(card.name)
+                    return {
+                      name: card.name,
+                      meaning: card.meaning,
+                      isReversed: false, // 从收藏记录中无法获取逆位信息，默认为正位
+                      translation: cardDetails?.translation || card.name,
+                      description: cardDetails?.description || "",
+                      normal: cardDetails?.normal || "",
+                      reversed: cardDetails?.reversed || "",
+                      detail: cardDetails?.detail || "",
+                      image: cardDetails?.image || "",
+                    }
+                  })}
                 />
               </div>
             </div>

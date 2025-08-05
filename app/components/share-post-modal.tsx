@@ -20,7 +20,6 @@ interface Post {
   time: string
   tags: string[]
   isLiked?: boolean
-  shareCount?: number
 }
 
 interface ShareModalProps {
@@ -156,10 +155,6 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
             <span className="flex items-center gap-1">
               <MessageCircle size={12} />
               {post.comments} 评论
-            </span>
-            <span className="flex items-center gap-1">
-              <Share2 size={12} />
-              {post.shareCount || 0} 分享
             </span>
           </div>
         </div>

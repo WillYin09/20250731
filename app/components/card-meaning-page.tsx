@@ -134,8 +134,8 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
 
       {/* Title */}
       <div style={{ textAlign: "center", padding: "15px 0 25px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>牌意解读</h1>
-        <p style={{ color: "#D4AF37", fontSize: "14px" }}>探索每张卡牌的深层含义</p>
+        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>78张卡牌详解</h1>
+        <p style={{ color: "#D4AF37", fontSize: "14px" }}>解读78张塔罗牌的奥秘</p>
       </div>
 
       {/* Search Bar */}

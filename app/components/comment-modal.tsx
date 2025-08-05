@@ -35,7 +35,6 @@ interface Post {
   time: string
   tags: string[]
   isLiked?: boolean
-  shareCount?: number
 }
 
 interface CommentModalProps {

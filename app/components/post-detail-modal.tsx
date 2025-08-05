@@ -19,7 +19,6 @@ interface Post {
   time: string
   tags: string[]
   isLiked?: boolean
-  shareCount?: number
 }
 
 interface PostDetailModalProps {
@@ -291,7 +290,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onLike, onComme
             }}
           >
             <Share2 className="w-5 h-5" />
-            <span style={{ fontSize: "12px" }}>{post.shareCount || 0}</span>
+            <span style={{ fontSize: "12px" }}>分享</span>
           </Button>
         </div>
       </div>

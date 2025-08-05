@@ -144,8 +144,8 @@ description: "通过指引逐步解锁78张卡牌，学习每张牌的深层含�
 
       {/* Title */}
       <div style={{ textAlign: "center", padding: "15px 0 25px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>新手指南</h1>
-        <p style={{ color: "#D4AF37", fontSize: "14px" }}>开启你的指引之旅</p>
+        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>从0~1入门指南</h1>
+        <p style={{ color: "#D4AF37", fontSize: "14px" }}>快速学会塔罗技巧</p>
       </div>
 
       {/* Welcome Section */}
