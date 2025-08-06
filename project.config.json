@@ -3,38 +3,39 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "file",
-        "value": ".eslintrc.js"
+        "value": ".eslintrc.js",
+        "type": "file"
       },
       {
-        "type": "file", 
-        "value": "next.config.mjs"
+        "value": "next.config.mjs",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "package.json"
+        "value": "package.json",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "pnpm-lock.yaml"
+        "value": "pnpm-lock.yaml",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "tailwind.config.ts"
+        "value": "tailwind.config.ts",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "tsconfig.json"
+        "value": "tsconfig.json",
+        "type": "file"
       },
       {
-        "type": "folder",
-        "value": "node_modules"
+        "value": "node_modules",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": ".next"
+        "value": ".next",
+        "type": "folder"
       }
-    ]
+    ],
+    "include": []
   },
   "setting": {
     "urlCheck": false,
@@ -72,20 +73,17 @@
     "disableUseStrict": false,
     "minifyWXML": true,
     "showES6CompileOption": false,
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "compileType": "miniprogram",
   "libVersion": "2.19.4",
-  "appid": "your_miniprogram_appid",
+  "appid": "wxa17f4f0213d6f776",
   "projectname": "tarot-app",
-  "debugOptions": {
-    "hidedInDevtools": []
-  },
-  "scripts": {},
-  "staticServerOptions": {
-    "baseURL": "",
-    "servePath": ""
-  },
   "isGameTourist": false,
   "condition": {
     "search": {
@@ -106,5 +104,7 @@
     "miniprogram": {
       "list": []
     }
-  }
-} 
+  },
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
+}
