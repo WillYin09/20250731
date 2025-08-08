@@ -1,5 +1,41 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { callQwenAPI } from "../../services/qwen-api"
+
+// 直接在Vercel Functions中调用Qwen API
+async function callQwenAPI(messages: any[], model = "qwen-turbo-latest") {
+  const apiKey = process.env.ALIYUN_QWEN_API_KEY
+  if (!apiKey) {
+    console.error("未配置阿里云Qwen API Key")
+    throw new Error("API配置错误")
+  }
+
+  try {
+    const response = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 3000,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Qwen API调用失败: ${response.status} ${errorText}`)
+      throw new Error(`API调用失败: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.choices?.[0]?.message?.content || ""
+  } catch (error) {
+    console.error("Qwen API调用异常:", error)
+    throw error
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,11 +134,9 @@ ${cards
     let fallbackMessage =
       "亲爱的朋友，卡牌的智慧告诉我们，每个问题都蕴含着成长的机会。相信你内心的直觉，它会指引你找到属于自己的答案。保持开放的心态，生活的安排总是最好的。"
 
-    for (const [keyword, response] of Object.entries(fallbackResponses)) {
-      if (question?.includes(keyword)) {
-        fallbackMessage = response
-        break
-      }
+    // 根据牌阵类型选择备用回答
+    if (spreadType && fallbackResponses[spreadType as keyof typeof fallbackResponses]) {
+      fallbackMessage = fallbackResponses[spreadType as keyof typeof fallbackResponses]
     }
 
     return NextResponse.json({
@@ -111,11 +145,11 @@ ${cards
       source: "fallback",
     })
   } catch (error) {
-    console.error("塔罗牌解读API错误:", error)
+    console.error("塔罗解读API错误:", error)
     return NextResponse.json(
       {
         error: "服务器内部错误",
-        text: "抱歉，解读服务暂时不可用，请稍后再试。",
+        text: "抱歉，服务器暂时无法处理您的请求，请稍后再试。",
       },
       { status: 500 },
     )

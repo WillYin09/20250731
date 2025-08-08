@@ -3,8 +3,6 @@
 import { useState, useCallback, useMemo, useRef } from "react"
 import { getRandomTarotCards, getCardMeaning, type TarotCardData, type TarotCardWithOrientation } from "../data/tarot-cards"
 import { getSpreadLayout } from "../data/spread-layouts"
-import { callDeepSeekAPI } from "../services/deepseek-api"
-import { callQwenAPI } from "../services/qwen-api"
 import { getBriefCardMeaning, generateConciseSummary } from "../utils/text-processing"
 
 export interface FlyingCard {
@@ -103,23 +101,28 @@ export function useCardReading(spreadType: string) {
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.text) {
-          updateState({ comprehensiveSummary: data.text })
-          return
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      throw new Error("API调用失败")
+      const data = await response.json()
+      
+      if (data.success && data.text) {
+        updateState({
+          comprehensiveSummary: data.text,
+          isLoadingReading: false,
+        })
+      } else {
+        throw new Error(data.error || "解读生成失败")
+      }
     } catch (error) {
-      console.error("AI解读生成失败:", error)
-      // 服务端已有完整的兜底逻辑，这里只需要显示错误状态
-      updateState({ comprehensiveSummary: "抱歉，解读服务暂时不可用，请稍后再试。" })
-    } finally {
-      updateState({ isLoadingReading: false })
+      console.error("生成解读失败:", error)
+      updateState({
+        comprehensiveSummary: "星辰的指引暂时模糊，但请相信，答案就在你的心中。静下心来，聆听内在的声音，它会为你点亮前行的道路。",
+        isLoadingReading: false,
+      })
     }
-  }, [state.selectedPresetQuestion, state.userQuestion, cachedCards, state.revealedCards, spreadLayout, spreadType])
+  }, [cachedCards, spreadType, state.selectedPresetQuestion, state.userQuestion, updateState])
 
   const startAIReading = useCallback(() => {
     updateState({ phase: "revealing" })
