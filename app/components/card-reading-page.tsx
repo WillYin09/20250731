@@ -29,6 +29,11 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
     isReversed: card.isReversed,
   } as const)
 
+  // 使用 ref 来跟踪当前的飞行卡牌，避免闭包问题
+  const currentFlyingCardRef = React.useRef<FlyingCard | null>(null)
+  // 使用 ref 来跟踪是否正在处理动画
+  const isAnimatingRef = React.useRef(false)
+
   const {
     state,
     updateState,
@@ -45,6 +50,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
 
   const [showCollectionFullModal, setShowCollectionFullModal] = React.useState(false)
   const [showShareModal, setShowShareModal] = React.useState(false)
+  const [activeCardTab, setActiveCardTab] = React.useState(0) // 新增：当前选中的卡牌Tab
 
   const presetQuestions = getPresetQuestions(spreadType)
   const totalCards = spreadLayout.positions.length
@@ -115,16 +121,11 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
 
     if (!cardElement || !targetElement) return
 
-    // 使用安全的卡牌选择处理
-    const canSelect = handleCardSelect(cardIndex, targetPosition, () => {
-      // 动画完成后的回调
-      updateState({
-        flyingCards: state.flyingCards.filter((card) => card.id !== flyingCard.id),
-        placedCards: new Map(state.placedCards).set(targetPosition, cardIndex),
-      })
-    })
+    // 检查是否已经选择了这张卡牌
+    if (state.selectedCards.includes(cardIndex)) return
 
-    if (!canSelect) return
+    // 防止快速点击
+    if (isAnimatingRef.current) return
 
     playCardSelectSound()
 
@@ -140,10 +141,30 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       cardIndex,
     }
 
+    // 保存当前飞行卡牌的引用
+    currentFlyingCardRef.current = flyingCard
+
+    // 设置动画状态
+    isAnimatingRef.current = true
+
+    // 立即更新状态，添加飞行卡牌和选中卡牌
     updateState({
       flyingCards: [...state.flyingCards, flyingCard],
       selectedCards: [...state.selectedCards, cardIndex],
     })
+
+    // 动画完成后，将卡牌从飞行状态移动到放置状态
+    setTimeout(() => {
+      const newPlacedCards = new Map(state.placedCards)
+      newPlacedCards.set(targetPosition, cardIndex)
+      updateState({
+        flyingCards: state.flyingCards.filter((card) => card.id !== currentFlyingCardRef.current?.id),
+        placedCards: newPlacedCards,
+      })
+      // 清理引用和动画状态
+      currentFlyingCardRef.current = null
+      isAnimatingRef.current = false
+    }, 1500) // 动画持续时间
   }
 
   const handleRedrawCard = (position: number) => {
@@ -183,6 +204,12 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
               cardIndex: newCardIndex,
             }
 
+            // 保存当前飞行卡牌的引用
+            currentFlyingCardRef.current = flyingCard
+
+            // 设置动画状态
+            isAnimatingRef.current = true
+
             const updatedSelected = [...newSelectedCards, newCardIndex]
             updateState({
               flyingCards: [...state.flyingCards, flyingCard],
@@ -190,10 +217,15 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             })
 
             setTimeout(() => {
+              const newPlacedCards = new Map(state.placedCards)
+              newPlacedCards.set(position, newCardIndex)
               updateState({
-                flyingCards: state.flyingCards.filter((card) => card.id !== flyingCard.id),
-                placedCards: new Map(state.placedCards).set(position, newCardIndex),
+                flyingCards: state.flyingCards.filter((card) => card.id !== currentFlyingCardRef.current?.id),
+                placedCards: newPlacedCards,
               })
+              // 清理引用和动画状态
+              currentFlyingCardRef.current = null
+              isAnimatingRef.current = false
             }, 1500)
           }
         }
@@ -259,21 +291,21 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
     let baseSize
     switch (size) {
       case "small":
-        baseSize = { width: 50, height: 75 }
+        baseSize = { width: 60, height: 90 }
         break
       case "large":
-        baseSize = { width: 80, height: 120 }
+        baseSize = { width: 90, height: 135 }
         break
       default:
-        baseSize = { width: 65, height: 98 }
+        baseSize = { width: 75, height: 112 }
         break
     }
     
     // 为凯尔特十字使用更小的卡牌尺寸
     if (spreadType === "凯尔特十字") {
       return {
-        width: Math.round(baseSize.width * 0.85), // 缩小15%
-        height: Math.round(baseSize.height * 0.85)
+        width: Math.round(baseSize.width * 0.8), // 缩小20%
+        height: Math.round(baseSize.height * 0.8)
       }
     }
     
@@ -342,7 +374,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
           className="starry-background"
           style={{
             minHeight: "100vh",
-            paddingBottom: "120px",
+            paddingBottom: "140px",
             overflowY: "auto",
           }}
         >
@@ -453,32 +485,80 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             )}
           </div>
 
-          {/* Card Readings */}
+          {/* Card Readings - 优化后的Tab模式 */}
           <div style={{ padding: "0 20px", marginBottom: "30px" }}>
-            {state.revealedCards.map((card, index) => {
-              const cardData = {
-                ...card,
-                image: card.image || "",
-                translation: card.translation || card.name,
-              }
-
-              return (
-                <div
+            {/* Tab导航 */}
+            <div style={{ 
+              display: "flex", 
+              gap: "8px", 
+              marginBottom: "16px",
+              justifyContent: "center",
+              flexWrap: "wrap"
+            }}>
+              {state.revealedCards.map((_, index) => (
+                <button
                   key={index}
+                  onClick={() => setActiveCardTab(index)}
                   style={{
-                    marginBottom: "18px",
-                    padding: "16px",
-                    backgroundColor: "rgba(54, 69, 79, 0.9)",
-                    borderRadius: "10px",
-                    boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
-                    animation: "slideInFromBottom 0.6s ease-out",
-                    animationDelay: `${index * 0.2}s`,
-                    animationFillMode: "both",
-                    border: "1px solid rgba(255, 215, 0, 0.2)",
-                    backdropFilter: "blur(15px)",
+                    padding: "8px 16px",
+                    backgroundColor: activeCardTab === index 
+                      ? "rgba(255, 215, 0, 0.9)" 
+                      : "rgba(54, 69, 79, 0.6)",
+                    color: activeCardTab === index ? "#1A237E" : "#F5F5DC",
+                    border: activeCardTab === index 
+                      ? "1px solid rgba(255, 215, 0, 0.8)" 
+                      : "1px solid rgba(255, 215, 0, 0.3)",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    backdropFilter: "blur(10px)",
+                    boxShadow: activeCardTab === index 
+                      ? "0 2px 8px rgba(255, 215, 0, 0.4)" 
+                      : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeCardTab !== index) {
+                      e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.3)"
+                      e.currentTarget.style.transform = "translateY(-1px)"
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeCardTab !== index) {
+                      e.currentTarget.style.backgroundColor = "rgba(54, 69, 79, 0.6)"
+                      e.currentTarget.style.transform = "translateY(0)"
+                    }
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                  {spreadLayout.positions[index].label}
+                </button>
+              ))}
+            </div>
+
+            {/* 当前选中的卡牌内容 */}
+            <div
+              style={{
+                padding: "16px",
+                backgroundColor: "rgba(54, 69, 79, 0.9)",
+                borderRadius: "10px",
+                boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
+                border: "1px solid rgba(255, 215, 0, 0.2)",
+                backdropFilter: "blur(15px)",
+                animation: "fadeIn 0.3s ease-out",
+              }}
+            >
+              {state.revealedCards.map((card, index) => {
+                if (index !== activeCardTab) return null
+                
+                const cardData = {
+                  ...card,
+                  image: card.image || "",
+                  translation: card.translation || card.name,
+                }
+
+                return (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
                     <TarotCardImage card={adaptCardForImage(cardData)} isRevealed={true} width={50} height={75} className="shadow-md" />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
@@ -520,12 +600,14 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                       </p>
                     </div>
                   </div>
-                  <p style={{ color: "#F5F5DC", lineHeight: "1.5", margin: 0, fontSize: "14px" }}>
-                    {cardData.description}
-                  </p>
-                </div>
-              )
-            })}
+                )
+              })}
+              
+              {/* 卡牌描述 */}
+              <p style={{ color: "#F5F5DC", lineHeight: "1.5", margin: 0, fontSize: "14px" }}>
+                {state.revealedCards[activeCardTab]?.description}
+              </p>
+            </div>
           </div>
 
           {/* Summary */}
@@ -655,14 +737,12 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          @keyframes slideInFromBottom {
+          @keyframes fadeIn {
             from {
               opacity: 0;
-              transform: translateY(40px);
             }
             to {
               opacity: 1;
-              transform: translateY(0);
             }
           }
         `}</style>
@@ -676,29 +756,10 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       style={{
         minHeight: "100vh",
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
-      {/* Flying Cards */}
-      {state.flyingCards.map((flyingCard) => (
-        <div
-          key={flyingCard.id}
-          style={
-            {
-              position: "fixed",
-              zIndex: 100,
-              left: `${flyingCard.startX - 30}px`,
-              top: `${flyingCard.startY - 45}px`,
-              transform: "scale(1.1)",
-              animation: `flyToTarget 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
-              "--target-x": `${flyingCard.targetX - 30}px`,
-              "--target-y": `${flyingCard.targetY - 45}px`,
-            } as React.CSSProperties
-          }
-        >
-          <TarotCardImage width={60} height={90} className="shadow-lg" />
-        </div>
-      ))}
+
 
       {/* Header */}
                 <div
@@ -812,23 +873,25 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       </div>
 
       {/* Question Input Section */}
-      <QuestionInputSection
-        presetQuestions={presetQuestions}
-        selectedPresetQuestion={state.selectedPresetQuestion}
-        userQuestion={state.userQuestion}
-        onPresetQuestionClick={handlePresetQuestionClick}
-        onUserQuestionChange={handleUserQuestionChange}
-        onCustomQuestionSubmit={handleCustomQuestionSubmit}
-      />
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <QuestionInputSection
+          presetQuestions={presetQuestions}
+          selectedPresetQuestion={state.selectedPresetQuestion}
+          userQuestion={state.userQuestion}
+          onPresetQuestionClick={handlePresetQuestionClick}
+          onUserQuestionChange={handleUserQuestionChange}
+          onCustomQuestionSubmit={handleCustomQuestionSubmit}
+        />
+      </div>
 
       {/* Card Positions */}
-      <div style={{ padding: "0 30px 4px", position: "relative", zIndex: 10 }}>
+      <div style={{ padding: "0 30px 4px", position: "relative", zIndex: 15 }}>
         <div
           style={{
             position: "relative",
             width: "100%",
-            height: `${Math.max(300, 400 / spreadLayout.containerAspectRatio)}px`,
-            maxWidth: spreadType === "凯尔特十字" ? "400px" : "500px",
+            height: `${Math.max(350, 450 / spreadLayout.containerAspectRatio)}px`,
+            maxWidth: spreadType === "凯尔特十字" ? "450px" : "550px",
             margin: "0 auto",
             marginBottom: "12px",
           }}
@@ -847,14 +910,14 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                   top: `calc(${position.y + overlayOffset.y}% - ${cardSize.height / 2}px)`,
                   textAlign: "center",
                   animation: `slideInFromTop 0.6s ease-out ${index * 0.1}s both`,
-                  zIndex: isOverlappingCard ? 10 : 5,
+                  zIndex: isOverlappingCard ? 20 : 15,
                 }}
               >
                 <div
                   data-position={position.id}
                   style={{
-                    width: `${cardSize.width}px`,
-                    height: `${cardSize.height}px`,
+                    width: `${cardSize.width + 4}px`,
+                    height: `${cardSize.height + 4}px`,
                     borderRadius: "10px",
                     border: state.placedCards.has(position.id)
                       ? "2px solid #FFD700"
@@ -866,12 +929,14 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                     alignItems: "center",
                     justifyContent: "center",
                     marginBottom: "6px",
+                    padding: "2px",
                     transition: "all 0.3s ease",
                     backdropFilter: "blur(10px)",
                     boxShadow: state.placedCards.has(position.id) ? "0 0 15px rgba(255, 215, 0, 0.4)" : "none",
                     position: "relative",
                     transform: isOverlappingCard ? "rotate(90deg)" : "none",
                   }}
+                  className={state.placedCards.has(position.id) ? "spread-position-filled" : "spread-position-empty"}
                 >
                   {!state.placedCards.has(position.id) && state.phase === "selecting" && (
                     <span
@@ -908,21 +973,28 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 <div
                   style={{
                     position: "relative",
-                    zIndex: 20,
+                    zIndex: 25,
                     backgroundColor: "rgba(26, 35, 126, 0.8)",
                     borderRadius: "6px",
-                    padding: "2px 5px",
-                    marginTop: "3px",
+                    padding: "3px 6px",
+                    marginTop: "4px",
                     border: "1px solid rgba(255, 215, 0, 0.3)",
+                    minHeight: "24px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   <p
                     style={{
                       color: "#F5F5DC",
-                      fontSize: spreadType === "凯尔特十字" ? "9px" : "10px",
+                      fontSize: spreadType === "凯尔特十字" ? "10px" : "11px",
                       fontWeight: "500",
-                      marginBottom: "1px",
+                      marginBottom: "2px",
                       textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                      lineHeight: "1.2",
+                      textAlign: "center",
                     }}
                   >
                     {position.label}
@@ -932,18 +1004,20 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                       onClick={() => handleRedrawCard(position.id)}
                       style={{
                         marginTop: "1px",
-                        padding: "1px 4px",
+                        padding: "2px 5px",
                         backgroundColor: "rgba(255, 215, 0, 0.9)",
                         color: "#1A237E",
                         border: "none",
                         borderRadius: "6px",
-                        fontSize: "7px",
+                        fontSize: "8px",
                         fontWeight: "500",
                         cursor: "pointer",
                         transition: "all 0.3s ease",
                         backdropFilter: "blur(10px)",
                         boxShadow: "0 1px 6px rgba(0,0,0,0.3)",
+                        lineHeight: "1",
                       }}
+                      className="micro-interaction"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = "scale(1.05)"
                         e.currentTarget.style.backgroundColor = "#FFD700"
@@ -963,7 +1037,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* Selection Progress */}
-        <div style={{ textAlign: "center", marginBottom: "4px" }}>
+        <div style={{ textAlign: "center", marginBottom: "4px", position: "relative", zIndex: 20 }}>
           <p style={{ color: "#FFD700", fontSize: "14px", fontWeight: "500", marginBottom: "8px" }}>
             已选择 {state.selectedCards.length}/{totalCards} 张牌
           </p>
@@ -985,7 +1059,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* AI Reading Button */}
-        <div style={{ textAlign: "center", marginBottom: "4px" }}>
+        <div style={{ textAlign: "center", marginBottom: "4px", position: "relative", zIndex: 20 }}>
           {state.selectedCards.length === totalCards ? (
             <button
               onClick={() => {
@@ -993,6 +1067,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 playMysticalSound()
                 startAIReading()
               }}
+              disabled={state.isLoadingReading}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1010,6 +1085,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 transition: "all 0.3s ease",
                 animation: "aiButtonAppear 0.6s ease-out",
               }}
+              className="micro-interaction sound-feedback"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "scale(1.05)"
                 e.currentTarget.style.boxShadow = "0 4px 16px rgba(255, 215, 0, 0.6)"
@@ -1040,7 +1116,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         </div>
 
         {/* Instructions */}
-        <div style={{ textAlign: "center", marginBottom: "6px" }}>
+        <div style={{ textAlign: "center", marginBottom: "6px", position: "relative", zIndex: 5 }}>
           <p style={{ color: "#D4AF37", fontSize: "12px" }}>
             {state.selectedCards.length === totalCards
               ? ""
@@ -1056,18 +1132,19 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         style={{
           position: "relative",
           width: "100%",
-          height: "160px",
+          height: "200px",
           background: "linear-gradient(to top, rgba(26, 35, 126, 0.95) 0%, transparent 100%)",
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "center",
           paddingBottom: "30px",
-          marginTop: "20px",
-          zIndex: 5,
+          marginTop: "12px",
+          zIndex: 15,
           pointerEvents: "none",
         }}
+        className="enhanced-starry-background"
       >
-        <div style={{ position: "relative", width: "90vw", maxWidth: "700px", height: "120px", pointerEvents: "auto" }}>
+        <div style={{ position: "relative", width: "90vw", maxWidth: "700px", height: "160px", pointerEvents: "auto" }}>
           {state.deckCards.map((cardIndex, index) => {
             const totalCards = state.deckCards.length
             const angle = baseAngle + index * angleStep
@@ -1088,22 +1165,85 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
                 style={{
                   position: "absolute",
                   cursor: state.phase === "selecting" ? "pointer" : "default",
-                  transition: "all 0.3s ease",
-                  left: `calc(50% + ${x}px - 30px)`,
+                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                  left: `calc(50% + ${x}px - 35px)`,
                   bottom: `${25 + y}px`,
-                  transform: `rotate(${angle}deg) ${isHovered ? "scale(1.1) translateY(-12px)" : ""}`,
-                  zIndex: isHovered ? 20 : 10,
+                  transform: `rotate(${angle}deg) ${isHovered ? "scale(1.08) translateY(-8px)" : ""}`,
+                  zIndex: isHovered ? 30 : 20,
                   opacity: isSelected ? 0.3 : 0.9,
                   pointerEvents: state.phase === "selecting" && !isSelected ? "auto" : "none",
-                  filter: isHovered ? "brightness(1.1) drop-shadow(0 0 10px rgba(255, 215, 0, 0.5))" : "none",
+                  filter: isHovered ? "brightness(1.1) drop-shadow(0 0 15px rgba(255, 215, 0, 0.5))" : "none",
+                  overflow: "hidden",
                 }}
+                className="tarot-card-hover"
               >
-                <TarotCardImage width={60} height={90} className={`shadow-lg ${isHovered ? "glow-effect" : ""}`} />
+                {/* 流动光线效果 */}
+                {isHovered && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: -100,
+                      width: 100,
+                      height: "100%",
+                      background: "linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent)",
+                      animation: "flowingLight 0.8s ease-out forwards",
+                      zIndex: 2,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+                {/* 水波纹效果 */}
+                {isHovered && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      width: 0,
+                      height: 0,
+                      background: "radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%)",
+                      borderRadius: "50%",
+                      transform: "translate(-50%, -50%)",
+                      animation: "rippleEffect 0.6s ease-out forwards",
+                      zIndex: 1,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+                <TarotCardImage 
+                  width={70} 
+                  height={105} 
+                  className={`shadow-lg glow-effect`} 
+                />
               </div>
             )
           })}
         </div>
       </div>
+
+      {/* Flying Cards Animation */}
+      {state.flyingCards.map((flyingCard) => (
+        <div
+          key={flyingCard.id}
+          style={{
+            position: "fixed",
+            zIndex: 1000,
+            pointerEvents: "none",
+            animation: `flyToTarget 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+            "--start-x": `${flyingCard.startX - 35}px`,
+            "--start-y": `${flyingCard.startY - 52}px`,
+            "--target-x": `${flyingCard.targetX - 35}px`,
+            "--target-y": `${flyingCard.targetY - 52}px`,
+          } as React.CSSProperties}
+        >
+          <TarotCardImage 
+            width={70} 
+            height={105} 
+            className="shadow-lg glow-effect" 
+          />
+        </div>
+      ))}
 
       {/* Animation keyframes */}
       <style jsx>{`
@@ -1140,6 +1280,8 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         @keyframes flyToTarget {
           0% {
             transform: scale(1.1) rotate(0deg);
+            left: var(--start-x);
+            top: var(--start-y);
           }
           50% {
             transform: scale(1.2) rotate(180deg) translateY(-40px);
@@ -1180,6 +1322,35 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
           }
           to {
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+          }
+        }
+        
+        /* 卡牌流动动效动画 */
+        
+        @keyframes flowingLight {
+          0% {
+            left: -100%;
+            opacity: 0;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            left: 100%;
+            opacity: 0;
+          }
+        }
+        
+        @keyframes rippleEffect {
+          0% {
+            width: 0;
+            height: 0;
+            opacity: 0.8;
+          }
+          100% {
+            width: 140px;
+            height: 140px;
+            opacity: 0;
           }
         }
       `}</style>

@@ -36,7 +36,7 @@ export default function QuestionInputSection({
   }
 
   return (
-    <div style={{ padding: "0 20px 12px", position: "relative", zIndex: 10 }}>
+    <div style={{ padding: "0 20px 12px", position: "relative", zIndex: 1 }}>
       <div
         style={{
           backgroundColor: "rgba(54, 69, 79, 0.8)",
@@ -152,7 +152,7 @@ export default function QuestionInputSection({
                   border: "1px solid rgba(255, 215, 0, 0.3)",
                   backdropFilter: "blur(15px)",
                   marginTop: "4px",
-                  zIndex: 1000,
+                  zIndex: 2,
                   maxHeight: "200px",
                   overflowY: "auto",
                 }}

@@ -55,10 +55,12 @@ export default function TarotCardImage({
   if (!card || !isRevealed) {
     return (
       <div
-        className={`relative ${className}`}
         style={{
-          width: `${width}px`,
-          height: `${height}px`,
+          width,
+          height,
+          borderRadius: "8px",
+          position: "relative",
+          cursor: onClick ? "pointer" : "default",
           ...style,
         }}
       >
@@ -66,15 +68,16 @@ export default function TarotCardImage({
           style={{
             width: "100%",
             height: "100%",
-            background: "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)",
             borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "2px solid #718096",
+            background: "linear-gradient(135deg, #36454f 0%, #1a237e 50%, #36454f 100%)",
+            border: "2px solid #4a5568",
             position: "relative",
             overflow: "hidden",
+            transition: "all 0.3s ease",
+            transformOrigin: "center center",
+            willChange: "transform",
           }}
+          className="card-back-enhanced"
         >
           {/* 卡背装饰图案 */}
           <div
@@ -82,20 +85,39 @@ export default function TarotCardImage({
               position: "absolute",
               inset: 0,
               background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 2px, transparent 2px),
-                         radial-gradient(circle at 70% 70%, rgba(255,255,255,0.1) 2px, transparent 2px)`,
-              backgroundSize: "20px 20px",
+                         radial-gradient(circle at 70% 70%, rgba(255,255,255,0.1) 2px, transparent 2px),
+                         radial-gradient(circle at 50% 50%, rgba(255,215,0,0.05) 1px, transparent 1px)`,
+              backgroundSize: "20px 20px, 20px 20px, 10px 10px",
             }}
           />
+          
+          {/* 中央装饰 */}
           <div
             style={{
-              fontSize: `${Math.min(width, height) * 0.3}px`,
-              color: "#a0aec0",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              fontSize: "24px",
+              color: "#D4AF37",
               textAlign: "center",
               zIndex: 1,
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
             }}
           >
             🌟
           </div>
+          
+          {/* 边缘装饰 */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "4px",
+              border: "1px solid rgba(255, 215, 0, 0.3)",
+              borderRadius: "4px",
+              background: "linear-gradient(45deg, transparent 40%, rgba(255, 215, 0, 0.1) 50%, transparent 60%)",
+            }}
+          />
         </div>
       </div>
     )
