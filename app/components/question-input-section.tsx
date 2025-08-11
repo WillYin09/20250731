@@ -48,7 +48,7 @@ export default function QuestionInputSection({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
           <MessageCircle size={16} style={{ color: "#FFD700" }} />
-          <h3 style={{ fontSize: "14px", fontWeight: "600", color: "#F5F5DC", margin: 0 }}>问题引导</h3>
+          <h3 style={{ fontSize: "14px", fontWeight: "600", color: "#F5F5DC", margin: 0 }}>今天想了解什么？</h3>
         </div>
 
         {/* Combined Input and Dropdown */}
@@ -78,7 +78,7 @@ export default function QuestionInputSection({
               e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
             }}
           >
-            推荐问题
+            💡 推荐
             <ChevronDown 
               size={12} 
               style={{ 
@@ -91,7 +91,7 @@ export default function QuestionInputSection({
           <div style={{ position: "relative", flex: 1 }}>
             <input
               type="text"
-              placeholder="输入您的专属问题..."
+              placeholder="详细描述你的情况..."
               value={userQuestion}
               onChange={(e) => onUserQuestionChange(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -111,33 +111,7 @@ export default function QuestionInputSection({
               }}
             />
 
-            {/* Send Button (when user is typing) */}
-            {userQuestion.trim() && (
-              <button
-                onClick={onCustomQuestionSubmit}
-                style={{
-                  position: "absolute",
-                  right: "6px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "all 0.3s ease",
-                  zIndex: 1,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.3)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                }}
-              >
-                <Send size={14} style={{ color: "#FFD700" }} />
-              </button>
-            )}
+            {/* 移除发送按钮，用户输入问题后直接进入抽牌状态 */}
 
             {/* Preset Questions Dropdown */}
             {showPresetQuestions && (
@@ -152,7 +126,7 @@ export default function QuestionInputSection({
                   border: "1px solid rgba(255, 215, 0, 0.3)",
                   backdropFilter: "blur(15px)",
                   marginTop: "4px",
-                  zIndex: 2,
+                  zIndex: 1000,
                   maxHeight: "200px",
                   overflowY: "auto",
                 }}
@@ -160,7 +134,12 @@ export default function QuestionInputSection({
                 {presetQuestions.map((question, index) => (
                   <button
                     key={index}
-                    onClick={() => handlePresetQuestionSelect(question)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      console.log('点击推荐问题:', question)
+                      handlePresetQuestionSelect(question)
+                    }}
                     style={{
                       width: "100%",
                       padding: "8px 12px",
@@ -172,6 +151,7 @@ export default function QuestionInputSection({
                       cursor: "pointer",
                       transition: "all 0.2s ease",
                       borderBottom: index < presetQuestions.length - 1 ? "1px solid rgba(255, 215, 0, 0.1)" : "none",
+                      zIndex: 10,
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.2)"
@@ -200,7 +180,7 @@ export default function QuestionInputSection({
             }}
           >
             <p style={{ color: "#FFD700", fontSize: "11px", margin: 0, fontWeight: "500" }}>
-              当前问题：{selectedPresetQuestion || userQuestion}
+              问题：{selectedPresetQuestion || userQuestion}
             </p>
           </div>
         )}
