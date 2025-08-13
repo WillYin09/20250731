@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sparkles, Heart, Briefcase, DollarSign, Star, ArrowRight, Crown, Calendar } from "lucide-react"
 import CardReadingPage from "./card-reading-page"
 import TarotCardImage from "./tarot-card-image"
@@ -9,6 +9,7 @@ import { MAJOR_ARCANA_BRIEF } from "../data/major-arcana-brief"
 import { useLunarPhase } from "../hooks/use-lunar-phase"
 import CardDetailModal from "./card-detail-modal"
 import dailyQuotes from "../data/daily_quotes.json"
+import { readingCacheManager } from "../utils/reading-cache-manager"
 
 export default function HomePage() {
   const [selectedSpread, setSelectedSpread] = useState<number | null>(null)
@@ -63,6 +64,15 @@ export default function HomePage() {
     return dailyQuotes[startIndex];
   }
   const todayQuote = getTodayQuote()
+
+  // 检查是否需要重定向到解读页面
+  useEffect(() => {
+    const { shouldRedirect, spreadType } = readingCacheManager.shouldRedirectToReading()
+    if (shouldRedirect && spreadType) {
+      setCurrentSpread(spreadType)
+      setShowReading(true)
+    }
+  }, [])
 
   const allCardSpreads = [
     {
@@ -129,6 +139,14 @@ export default function HomePage() {
     setShowReading(false)
     setSelectedSpread(null)
     setCurrentSpread("")
+    // 更新缓存，标记用户已返回首页
+    const cached = readingCacheManager.restoreReadingState()
+    if (cached) {
+      readingCacheManager.saveReadingState({
+        ...cached,
+        currentPage: "home",
+      })
+    }
   }
 
   const getDifficultyColor = (difficulty: string) => {

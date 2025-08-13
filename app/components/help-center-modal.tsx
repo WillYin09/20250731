@@ -103,7 +103,7 @@ export default function HelpCenterModal({ isOpen, onClose }: HelpCenterModalProp
             extInfo: { url: 'https://work.weixin.qq.com/kfid/kf_xxx' }, // 需要替换为实际的客服链接
             corpId: 'your_corp_id', // 需要替换为实际的企业ID
             success: () => {
-              console.log('客服对话已打开')
+              // 客服对话已打开
             },
             fail: (err) => {
               console.error('打开客服失败:', err)
