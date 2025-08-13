@@ -137,7 +137,6 @@ export default function QuestionInputSection({
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      console.log('点击推荐问题:', question)
                       handlePresetQuestionSelect(question)
                     }}
                     style={{

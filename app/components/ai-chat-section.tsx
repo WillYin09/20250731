@@ -24,13 +24,24 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesWrapperRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    // 仅滚动容器内部，避免带动窗口滚动到页面底部
+    const wrapper = messagesWrapperRef.current
+    if (wrapper) {
+      wrapper.scrollTop = wrapper.scrollHeight
+    } else {
+      // 兜底：若容器不存在，再使用 scrollIntoView
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    }
   }
 
   useEffect(() => {
-    scrollToBottom()
+    // 初次挂载不滚动；只有在真的出现消息时才滚动到底部
+    if (messages.length > 0) {
+      scrollToBottom()
+    }
   }, [messages])
 
   // 动态生成建议问题
@@ -203,7 +214,7 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
 
   return (
     <div
-      className="rounded-lg border shadow-lg h-96 flex flex-col"
+      className="rounded-lg border shadow-lg h-80 flex flex-col"
       style={{
         backgroundColor: "rgba(54, 69, 79, 0.95)",
         border: "1px solid rgba(255, 215, 0, 0.3)",
@@ -211,10 +222,10 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
       }}
     >
       {/* Header */}
-      <div className="p-4 border-b" style={{ borderColor: "rgba(255, 215, 0, 0.2)" }}>
+      <div className="p-3 border-b" style={{ borderColor: "rgba(255, 215, 0, 0.2)" }}>
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5" style={{ color: "#FFD700" }} />
-          <h3 className="font-semibold" style={{ color: "#FFD700" }}>
+          <Sparkles className="w-4 h-4" style={{ color: "#FFD700" }} />
+          <h3 className="font-semibold text-sm" style={{ color: "#FFD700" }}>
             智慧解读
           </h3>
           <span
@@ -231,21 +242,21 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={messagesWrapperRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
-          <div className="text-center py-8">
-            <Sparkles className="w-12 h-12 mx-auto mb-4" style={{ color: "#FFD700" }} />
-            <p className="font-medium mb-2" style={{ color: "#F5F5DC" }}>
+          <div className="text-center py-6">
+            <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: "#FFD700" }} />
+            <p className="font-medium mb-2 text-sm" style={{ color: "#F5F5DC" }}>
               你可能想了解
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {suggestedQuestions.map((q, index) => (
                 <Button
                   key={index}
                   variant="outline"
                   size="sm"
                   onClick={() => handleSuggestedQuestion(q)}
-                  className="block w-full text-left text-sm transition-all duration-300 hover:scale-105"
+                  className="block w-full text-left text-xs transition-all duration-300 hover:scale-105"
                   style={{
                     backgroundColor: "rgba(255, 215, 0, 0.1)",
                     border: "1px solid rgba(255, 215, 0, 0.3)",
@@ -277,14 +288,14 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${message.isUser ? "rounded-br-none" : "rounded-bl-none"}`}
+              className={`max-w-[80%] p-2 rounded-lg ${message.isUser ? "rounded-br-none" : "rounded-bl-none"}`}
               style={{
                 backgroundColor: message.isUser ? "rgba(255, 215, 0, 0.2)" : "rgba(54, 69, 79, 0.8)",
                 border: message.isUser ? "1px solid rgba(255, 215, 0, 0.4)" : "1px solid rgba(255, 215, 0, 0.2)",
                 color: "#F5F5DC",
               }}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              <p className="text-xs leading-relaxed whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}
@@ -292,7 +303,7 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
         {isLoading && (
           <div className="flex justify-start">
             <div
-              className="p-3 rounded-lg rounded-bl-none"
+              className="p-2 rounded-lg rounded-bl-none"
               style={{
                 backgroundColor: "rgba(54, 69, 79, 0.8)",
                 border: "1px solid rgba(255, 215, 0, 0.2)",
@@ -321,7 +332,7 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t" style={{ borderColor: "rgba(255, 215, 0, 0.2)" }}>
+      <div className="p-3 border-t" style={{ borderColor: "rgba(255, 215, 0, 0.2)" }}>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
@@ -330,7 +341,7 @@ export default function AiChatSection({ cards, question = "寻求人生指导" }
             onKeyDown={handleKeyDown}
             placeholder="请输入你想了解的问题..."
             disabled={isLoading}
-            className="flex-1 px-3 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 text-sm"
+            className="flex-1 px-3 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 text-xs"
             style={{
               backgroundColor: "rgba(54, 69, 79, 0.8)",
               border: "1px solid rgba(255, 215, 0, 0.2)",

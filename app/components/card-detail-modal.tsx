@@ -372,18 +372,7 @@ export default function CardDetailModal({ isOpen, onClose, card, cardStats, isDa
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes modalSlideIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9) translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-      `}</style>
+      <style jsx>{``}</style>
     </div>
   )
 }
