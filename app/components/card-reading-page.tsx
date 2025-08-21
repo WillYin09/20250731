@@ -6,6 +6,7 @@ import { useFavorites } from "../hooks/use-favorites"
 import { useCardCollection } from "../hooks/use-card-collection"
 import { useAudio } from "./audio-manager"
 import { useCardReading, type FlyingCard } from "../hooks/use-card-reading"
+import { useGoogleAnalytics } from "../hooks/use-google-analytics"
 import CollectionFullModal from "./collection-full-modal"
 import AIChatSection from "./ai-chat-section"
 // 分享功能暂时移除
@@ -55,6 +56,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
   const { addFavorite, isFavorited, canAddMore } = useFavorites()
   const { recordReading } = useCardCollection()
   const { playCardSelectSound, playCardFlipSound, playMysticalSound } = useAudio()
+  const { trackSaveReading } = useGoogleAnalytics()
 
   const [showCollectionFullModal, setShowCollectionFullModal] = React.useState(false)
   // 分享功能暂时移除
@@ -320,6 +322,9 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       })
 
       if (result.success) {
+        // 追踪收藏事件
+        trackSaveReading(spreadType, state.userRating, mood)
+        
         updateState({ favoriteState: "saved" })
         playMysticalSound()
       } else {

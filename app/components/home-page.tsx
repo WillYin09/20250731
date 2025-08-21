@@ -7,6 +7,7 @@ import TarotCardImage from "./tarot-card-image"
 import { getTarotCard } from "../data/tarot-cards"
 import { MAJOR_ARCANA_BRIEF } from "../data/major-arcana-brief"
 import { useLunarPhase } from "../hooks/use-lunar-phase"
+import { useGoogleAnalytics } from "../hooks/use-google-analytics"
 import CardDetailModal from "./card-detail-modal"
 import dailyQuotes from "../data/daily_quotes.json"
 import { readingCacheManager } from "../utils/reading-cache-manager"
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [currentSpread, setCurrentSpread] = useState<string>("")
   const [showDetailModal, setShowDetailModal] = useState(false)
   const lunarPhase = useLunarPhase()
+  const { trackStartReading } = useGoogleAnalytics()
 
   const dailyCard = (() => {
     const today = new Date()
@@ -130,6 +132,8 @@ export default function HomePage() {
   const handleSpreadClick = (spreadId: number) => {
     const spread = allCardSpreads.find((s) => s.id === spreadId)
     if (spread) {
+      // 追踪开始占卜事件
+      trackStartReading(spread.name)
       setCurrentSpread(spread.name)
       setShowReading(true)
     }

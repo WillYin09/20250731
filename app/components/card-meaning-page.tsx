@@ -7,6 +7,7 @@ import TarotCardImage from "./tarot-card-image"
 import CardDetailModal from "./card-detail-modal"
 import { TAROT_CARDS } from "../data/tarot-cards"
 import { useCardCollection } from "../hooks/use-card-collection"
+import { useGoogleAnalytics } from "../hooks/use-google-analytics"
 
 interface CardMeaningPageProps {
   onBack: () => void
@@ -17,6 +18,7 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedCard, setSelectedCard] = useState<{ card: any; stats: any } | null>(null)
   const { isCardUnlocked, getCardStats } = useCardCollection()
+  const { trackViewCardDetail } = useGoogleAnalytics()
 
   const categories = [
     { id: "all", name: "全部", count: TAROT_CARDS.length },
@@ -75,6 +77,8 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
 
   const handleCardClick = (card: any) => {
     if (isCardUnlocked(card.name)) {
+      // 追踪查看牌义事件
+      trackViewCardDetail(card.name)
       const stats = getCardStats(card.name)
       setSelectedCard({ card, stats })
     }

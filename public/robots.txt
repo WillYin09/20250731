@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# 禁止爬取管理页面
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+
+# 允许爬取重要页面
+Allow: /tarot-cards/
+Allow: /card-meanings/
+Allow: /spreads/
+Allow: /learn/
+
+# 站点地图
+Sitemap: https://your-domain.com/sitemap.xml
+
+# 爬取延迟（可选）
+Crawl-delay: 1
