@@ -113,7 +113,7 @@ export function useCardReading(spreadType: string) {
           isLoadingReading: false,
         })
         
-        // 追踪完成解读事件
+        // 追踪完成解读事件 - 只在客户端执行
         if (typeof window !== 'undefined' && window.gtag) {
           window.gtag('event', 'complete_reading', {
             event_category: 'tarot_app',

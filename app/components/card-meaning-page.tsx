@@ -18,7 +18,7 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedCard, setSelectedCard] = useState<{ card: any; stats: any } | null>(null)
   const { isCardUnlocked, getCardStats } = useCardCollection()
-  const { trackViewCardDetail } = useGoogleAnalytics()
+  const { trackViewCardDetail, isClient } = useGoogleAnalytics()
 
   const categories = [
     { id: "all", name: "全部", count: TAROT_CARDS.length },
@@ -77,8 +77,10 @@ export default function CardMeaningPage({ onBack }: CardMeaningPageProps) {
 
   const handleCardClick = (card: any) => {
     if (isCardUnlocked(card.name)) {
-      // 追踪查看牌义事件
-      trackViewCardDetail(card.name)
+      // 只在客户端追踪查看牌义事件
+      if (isClient) {
+        trackViewCardDetail(card.name)
+      }
       const stats = getCardStats(card.name)
       setSelectedCard({ card, stats })
     }

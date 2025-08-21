@@ -56,7 +56,7 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
   const { addFavorite, isFavorited, canAddMore } = useFavorites()
   const { recordReading } = useCardCollection()
   const { playCardSelectSound, playCardFlipSound, playMysticalSound } = useAudio()
-  const { trackSaveReading } = useGoogleAnalytics()
+  const { trackSaveReading, isClient } = useGoogleAnalytics()
 
   const [showCollectionFullModal, setShowCollectionFullModal] = React.useState(false)
   // 分享功能暂时移除
@@ -322,8 +322,10 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       })
 
       if (result.success) {
-        // 追踪收藏事件
-        trackSaveReading(spreadType, state.userRating, mood)
+        // 追踪收藏事件 - 只在客户端执行
+        if (isClient) {
+          trackSaveReading(spreadType, state.userRating, mood)
+        }
         
         updateState({ favoriteState: "saved" })
         playMysticalSound()

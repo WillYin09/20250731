@@ -1,27 +1,16 @@
 'use client'
 
-import Script from 'next/script'
+import dynamic from 'next/dynamic'
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-FPZG3ZXKNE'
+// 使用 dynamic import 完全避免服务端渲染
+const GoogleAnalyticsClient = dynamic(
+  () => import('./google-analytics-client'),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+)
 
 export default function GoogleAnalytics() {
-  return (
-    <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}', {
-            page_title: document.title,
-            page_location: window.location.href,
-          });
-        `}
-      </Script>
-    </>
-  )
+  return <GoogleAnalyticsClient />
 }

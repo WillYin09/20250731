@@ -18,7 +18,7 @@ export default function HomePage() {
   const [currentSpread, setCurrentSpread] = useState<string>("")
   const [showDetailModal, setShowDetailModal] = useState(false)
   const lunarPhase = useLunarPhase()
-  const { trackStartReading } = useGoogleAnalytics()
+  const { trackStartReading, isClient } = useGoogleAnalytics()
 
   const dailyCard = (() => {
     const today = new Date()
@@ -132,8 +132,10 @@ export default function HomePage() {
   const handleSpreadClick = (spreadId: number) => {
     const spread = allCardSpreads.find((s) => s.id === spreadId)
     if (spread) {
-      // 追踪开始占卜事件
-      trackStartReading(spread.name)
+      // 只在客户端追踪开始占卜事件
+      if (isClient) {
+        trackStartReading(spread.name)
+      }
       setCurrentSpread(spread.name)
       setShowReading(true)
     }
