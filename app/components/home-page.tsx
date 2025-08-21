@@ -193,7 +193,7 @@ export default function HomePage() {
     <div style={{ paddingBottom: "120px", minHeight: "100vh", overflowY: "auto" }}>
       {/* Welcome Section - 移动端优化 */}
       <div style={{ textAlign: "center", padding: "16px 0 0 0" }}>
-        <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>抽张塔罗吧</h1>
+        <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>开始你的在线塔罗占卜</h1>
         <div style={{ fontStyle: "italic", color: "#D4AF37", fontSize: "13px", lineHeight: 1.4, maxWidth: 360, margin: "0 auto 8px auto", textAlign: "center", padding: "0 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {todayQuote.quote}
         </div>

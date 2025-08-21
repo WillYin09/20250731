@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://your-domain.com'),
+  metadataBase: new URL('https://www.dyin0802.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "塔罗牌在线解读 - 免费塔罗牌占卜与学习平台",
     description: "专业的塔罗牌在线解读平台，提供78张塔罗牌详细含义、免费占卜、牌阵解读、塔罗牌学习指南。",
-    url: 'https://your-domain.com',
+    url: 'https://www.dyin0802.com',
     siteName: '塔罗牌解读平台',
     images: [
       {

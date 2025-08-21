@@ -89,7 +89,7 @@ function TarotApp() {
           borderBottom: "1px solid rgba(255, 215, 0, 0.2)",
         }}
       >
-        <div style={{ fontSize: "14px", fontWeight: "600", color: "#FFD700" }}>抽张塔罗吧</div>
+        <div style={{ fontSize: "14px", fontWeight: "600", color: "#FFD700" }}>开始你的在线塔罗占卜</div>
         <MusicControls />
       </div>
 
@@ -179,3 +179,7 @@ export default function App() {
     </AudioProvider>
   )
 } 
+
+// 临时禁用此路由的 SSG/SSR，强制走动态渲染，便于绕过构建期数据/环境问题
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
