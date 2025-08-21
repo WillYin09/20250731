@@ -1,19 +1,28 @@
 "use client"
 
 import React, { useEffect } from "react"
-import { ArrowLeft, MoreHorizontal, Target, RotateCcw, Zap, Heart, Star, Loader2, Share2 } from "lucide-react"
+import { Zap, Loader2, Star, ArrowLeft, MoreHorizontal, Target, RotateCcw, Share2, Heart } from "lucide-react"
 import { useFavorites } from "../hooks/use-favorites"
 import { useCardCollection } from "../hooks/use-card-collection"
 import { useAudio } from "./audio-manager"
 import { useCardReading, type FlyingCard } from "../hooks/use-card-reading"
+import { useGoogleAnalytics } from "../hooks/use-google-analytics"
 import CollectionFullModal from "./collection-full-modal"
 import AIChatSection from "./ai-chat-section"
-import ShareModal from "./share-modal"
+// 分享功能暂时移除
 import TarotCardImage from "./tarot-card-image"
 import FormattedReading from "./formatted-reading"
 import QuestionInputSection from "./question-input-section"
+import ReadingHeader from "./reading/ReadingHeader"
+import ReadingActions from "./reading/ReadingActions"
+import FlyingCardLayer from "./reading/FlyingCardLayer"
+import SpreadCanvas from "./reading/SpreadCanvas"
+import CardDeckFan from "./reading/CardDeckFan"
+import ReadingProgress from "./reading/ReadingProgress"
+import CollapsibleCardDetail from "./reading/CollapsibleCardDetail"
 import { getPresetQuestions } from "../utils/text-processing"
 import { getCardMeaning, type TarotCardWithOrientation, type TarotCardData } from "../data/tarot-cards"
+import { readingCacheManager, type CachedReadingState } from "../utils/reading-cache-manager"
 
 export interface CardReadingPageProps {
   spreadType: string
@@ -47,18 +56,61 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
   const { addFavorite, isFavorited, canAddMore } = useFavorites()
   const { recordReading } = useCardCollection()
   const { playCardSelectSound, playCardFlipSound, playMysticalSound } = useAudio()
+  const { trackSaveReading, isClient } = useGoogleAnalytics()
 
   const [showCollectionFullModal, setShowCollectionFullModal] = React.useState(false)
-  const [showShareModal, setShowShareModal] = React.useState(false)
+  // 分享功能暂时移除
   const [activeCardTab, setActiveCardTab] = React.useState(0) // 新增：当前选中的卡牌Tab
+  const [isFromCache, setIsFromCache] = React.useState(false) // 新增：标记是否从缓存恢复
 
   const presetQuestions = getPresetQuestions(spreadType)
   const totalCards = spreadLayout.positions.length
   const baseAngle = -60
   const angleStep = 120 / (state.deckCards.length - 1)
 
+  // 组件挂载时检查并恢复缓存状态
   useEffect(() => {
+    const cachedState = readingCacheManager.restoreReadingState()
+    if (cachedState && cachedState.spreadType === spreadType) {
+      // 恢复缓存的状态
+      updateState({
+        revealedCards: cachedState.revealedCards,
+        comprehensiveSummary: cachedState.comprehensiveSummary,
+        userQuestion: cachedState.userQuestion || "",
+        selectedPresetQuestion: cachedState.selectedPresetQuestion || "",
+        phase: cachedState.phase as "selecting" | "revealing" | "reading",
+        userRating: cachedState.userRating,
+        favoriteState: cachedState.favoriteState as "idle" | "saving" | "saved" | "error",
+      })
+      setActiveCardTab(cachedState.activeCardTab)
+      setIsFromCache(true) // 标记从缓存恢复
+    }
+  }, [spreadType])
+
+  // 组件卸载时保存状态到缓存
+  useEffect(() => {
+    return () => {
     if (state.phase === "reading" && state.revealedCards.length > 0) {
+        const cacheState: CachedReadingState = {
+          spreadType,
+          revealedCards: state.revealedCards,
+          comprehensiveSummary: state.comprehensiveSummary || "",
+          userQuestion: state.userQuestion || "",
+          selectedPresetQuestion: state.selectedPresetQuestion || "",
+          timestamp: Date.now(),
+          phase: state.phase,
+          activeCardTab,
+          userRating: state.userRating,
+          favoriteState: state.favoriteState,
+          currentPage: "reading",
+        }
+        readingCacheManager.saveReadingState(cacheState)
+      }
+    }
+  }, [state.phase, state.revealedCards, state.comprehensiveSummary, state.userQuestion, state.selectedPresetQuestion, state.userRating, state.favoriteState, activeCardTab, spreadType])
+
+  useEffect(() => {
+    if (state.phase === "reading" && state.revealedCards.length > 0 && !isFromCache) {
       const timestamp = Date.now()
       const newReadingId = `${spreadType}-${timestamp}`
       updateState({ readingId: newReadingId })
@@ -83,8 +135,13 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       } else {
         updateState({ favoriteState: "idle" })
       }
+
+      // 阅读完成后将页面滚动到顶部，便于从头阅读
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      } catch {}
     }
-  }, [state.phase, state.revealedCards.length])
+  }, [state.phase, state.revealedCards.length, isFromCache])
 
   // 在 useEffect 中监听卡牌揭示状态
   useEffect(() => {
@@ -265,6 +322,11 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
       })
 
       if (result.success) {
+        // 追踪收藏事件 - 只在客户端执行
+        if (isClient) {
+          trackSaveReading(spreadType, state.userRating, mood)
+        }
+        
         updateState({ favoriteState: "saved" })
         playMysticalSound()
       } else {
@@ -281,10 +343,10 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
     }
   }
 
+  // 分享功能暂时移除
   const handleShare = () => {
-    if (state.comprehensiveSummary && state.revealedCards.length > 0) {
-      setShowShareModal(true)
-    }
+    // 仅提示占位，后续重写
+    console.info("分享功能已暂时下线，仅保留入口图标")
   }
 
   const getCardSize = (size?: "small" | "normal" | "large") => {
@@ -332,41 +394,9 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
     }
   }
 
-  const getFavoriteButtonProps = () => {
-    switch (state.favoriteState) {
-      case "saving":
-        return {
-          backgroundColor: "#6b7280",
-          text: "保存中...",
-          icon: <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />,
-          disabled: true,
-        }
-      case "saved":
-        return {
-          backgroundColor: "#10b981",
-          text: "已收藏",
-          icon: <Heart size={18} style={{ fill: "white" }} />,
-          disabled: true,
-        }
-      case "error":
-        return {
-          backgroundColor: "#ef4444",
-          text: "保存失败",
-          icon: <Heart size={18} />,
-          disabled: true,
-        }
-      default:
-        return {
-          backgroundColor: state.userRating > 0 ? "#FFD700" : "#6b7280",
-          text: "收藏这次指引",
-          icon: <Heart size={18} />,
-          disabled: state.userRating === 0,
-        }
-    }
-  }
+
 
   if (state.phase === "reading") {
-    const buttonProps = getFavoriteButtonProps()
 
     return (
       <>
@@ -378,112 +408,21 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             overflowY: "auto",
           }}
         >
-          {/* Header */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "8px 20px",
-              paddingTop: "12px",
+          <ReadingHeader
+            onBack={onBack}
+            onShare={handleShare}
+            onReset={() => {
+              resetReading()
+              setActiveCardTab(0)
+              setIsFromCache(false) // 重置缓存标志
+              readingCacheManager.clearCache()
             }}
-          >
-            <button
-              onClick={onBack}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "none",
-                border: "none",
-                color: "#F5F5DC",
-                fontSize: "15px",
-                cursor: "pointer",
-                zIndex: 1000,
-                position: "relative",
-                padding: "8px",
-                borderRadius: "4px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
-                e.currentTarget.style.color = "#FFD700"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent"
-                e.currentTarget.style.color = "#F5F5DC"
-              }}
-            >
-              <ArrowLeft size={18} />
-              返回
-            </button>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button
-                onClick={handleShare}
-                disabled={!(state.comprehensiveSummary && state.revealedCards.length > 0)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: state.comprehensiveSummary && state.revealedCards.length > 0 ? "#F5F5DC" : "#888888",
-                  cursor: state.comprehensiveSummary && state.revealedCards.length > 0 ? "pointer" : "not-allowed",
-                  padding: "6px",
-                  borderRadius: "50%",
-                  transition: "all 0.3s ease",
-                  position: "relative"
-                }}
-                title={state.comprehensiveSummary && state.revealedCards.length > 0 ? "分享指引结果" : "请先完成AI解读后再分享"}
-                onMouseEnter={(e) => {
-                  if (state.comprehensiveSummary && state.revealedCards.length > 0) {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.1)"
-                    e.currentTarget.style.color = "#FFD700"
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (state.comprehensiveSummary && state.revealedCards.length > 0) {
-                    e.currentTarget.style.backgroundColor = "transparent"
-                    e.currentTarget.style.color = "#F5F5DC"
-                  }
-                }}
-              >
-                <Share2 size={18} />
-              </button>
-              <button
-                onClick={resetReading}
-                style={{ background: "none", border: "none", color: "#F5F5DC", cursor: "pointer" }}
-              >
-                <RotateCcw size={18} />
-              </button>
-              <button style={{ background: "none", border: "none", color: "#F5F5DC", cursor: "pointer" }}>
-                <MoreHorizontal size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Title */}
-          <div style={{ textAlign: "center", padding: "10px 0 15px" }}>
-            <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#FFD700", marginBottom: "6px" }}>
-              {spreadType}解读
-            </h1>
-            {spreadLayout.description && (
-              <p style={{ color: "#D4AF37", fontSize: "13px" }}>{spreadLayout.description}</p>
-            )}
-            {(state.selectedPresetQuestion || state.userQuestion) && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  padding: "6px 14px",
-                  backgroundColor: "rgba(255, 215, 0, 0.1)",
-                  borderRadius: "18px",
-                  display: "inline-block",
-                  border: "1px solid rgba(255, 215, 0, 0.3)",
-                }}
-              >
-                <p style={{ color: "#FFD700", fontSize: "13px", margin: 0, fontWeight: "500" }}>
-                  问题：{state.selectedPresetQuestion || state.userQuestion}
-                </p>
-              </div>
-            )}
-          </div>
+            canShare={!!(state.comprehensiveSummary && state.revealedCards.length > 0)}
+            spreadType={spreadType}
+            spreadLayout={spreadLayout}
+            selectedPresetQuestion={state.selectedPresetQuestion}
+            userQuestion={state.userQuestion}
+          />
 
           {/* Card Readings - 优化后的Tab模式 */}
           <div style={{ padding: "0 20px", marginBottom: "30px" }}>
@@ -537,81 +476,26 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
             </div>
 
             {/* 当前选中的卡牌内容 */}
-            <div
-              style={{
-                padding: "16px",
-                backgroundColor: "rgba(54, 69, 79, 0.9)",
-                borderRadius: "10px",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
-                border: "1px solid rgba(255, 215, 0, 0.2)",
-                backdropFilter: "blur(15px)",
-                animation: "fadeIn 0.3s ease-out",
-              }}
-            >
+            <div style={{ padding: 0 }}>
               {state.revealedCards.map((card, index) => {
                 if (index !== activeCardTab) return null
-                
-                const cardData = {
-                  ...card,
-                  image: card.image || "",
-                  translation: card.translation || card.name,
-                }
 
                 return (
-                  <div key={index} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                    <TarotCardImage card={adaptCardForImage(cardData)} isRevealed={true} width={50} height={75} className="shadow-md" />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
-                        <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F5F5DC", margin: 0 }}>
-                          {cardData.translation} ({cardData.name})
-                        </h3>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            padding: "2px 6px",
-                            backgroundColor: "rgba(255, 215, 0, 0.2)",
-                            color: "#FFD700",
-                            borderRadius: "10px",
-                            border: "1px solid rgba(255, 215, 0, 0.3)",
-                          }}
-                        >
-                          {spreadLayout.positions[index].label}
-                        </span>
-                        {cardData.isReversed && (
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              padding: "2px 6px",
-                              backgroundColor: "rgba(239, 68, 68, 0.2)",
-                              color: "#ef4444",
-                              borderRadius: "10px",
-                              border: "1px solid rgba(239, 68, 68, 0.3)",
-                            }}
-                          >
-                            逆位
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ color: "#FFD700", fontWeight: "500", fontSize: "13px", margin: "0 0 3px 0" }}>
-                        {getCardMeaning(cardData as TarotCardData, cardData.isReversed)}
-                      </p>
-                      <p style={{ color: "#D4AF37", fontSize: "11px", margin: 0 }}>
-                        {spreadLayout.positions[index].description}
-                      </p>
-                    </div>
-                  </div>
+                  <CollapsibleCardDetail
+                    key={index}
+                    card={card}
+                    positionLabel={spreadLayout.positions[index].label}
+                    positionDescription={spreadLayout.positions[index].description}
+                    isReversed={card.isReversed}
+                    adaptCardForImage={adaptCardForImage}
+                  />
                 )
               })}
-              
-              {/* 卡牌描述 */}
-              <p style={{ color: "#F5F5DC", lineHeight: "1.5", margin: 0, fontSize: "14px" }}>
-                {state.revealedCards[activeCardTab]?.description}
-              </p>
             </div>
           </div>
 
           {/* Summary */}
-          <div style={{ padding: "0 20px 30px" }}>
+          <div style={{ padding: "0 20px 20px" }}>
             {state.isLoadingReading ? (
               <div
                 style={{
@@ -636,101 +520,23 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
 
           {/* AI Chat Section */}
           {!state.isLoadingReading && state.comprehensiveSummary && (
-            <div style={{ padding: "0 20px 30px" }}>
+            <div style={{ padding: "0 20px 20px" }}>
               <AIChatSection cards={state.revealedCards} question={state.userQuestion || state.selectedPresetQuestion || "寻求人生指导"} />
             </div>
           )}
 
-          {/* Rating and Save Section */}
-          <div style={{ padding: "0 20px 30px" }}>
-            <div
-              style={{
-                padding: "16px",
-                backgroundColor: "rgba(54, 69, 79, 0.9)",
-                borderRadius: "10px",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
-                border: "1px solid rgba(255, 215, 0, 0.2)",
-                backdropFilter: "blur(15px)",
-              }}
-            >
-              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "#F5F5DC", marginBottom: "12px" }}>
-                为这次指引评分
-              </h3>
-
-              {/* Star Rating */}
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "16px" }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => updateState({ userRating: star })}
-                    disabled={state.favoriteState === "saved"}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: state.favoriteState === "saved" ? "not-allowed" : "pointer",
-                      padding: "3px",
-                      opacity: state.favoriteState === "saved" ? 0.6 : 1,
-                    }}
-                  >
-                    <Star
-                      size={22}
-                      style={{
-                        color: star <= state.userRating ? "#FFD700" : "#6b7280",
-                        fill: star <= state.userRating ? "#FFD700" : "none",
-                      }}
-                    />
-                  </button>
-                ))}
-                <span style={{ marginLeft: "6px", color: "#D4AF37", fontSize: "13px" }}>
-                  {state.userRating > 0 ? `${state.userRating} 星` : "点击评分"}
-                </span>
-              </div>
-
-              {/* Save Button */}
-              <button
-                onClick={handleSaveReading}
-                disabled={buttonProps.disabled}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  width: "100%",
-                  padding: "10px 16px",
-                  backgroundColor: buttonProps.backgroundColor,
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  fontWeight: "600",
-                  cursor: buttonProps.disabled ? "not-allowed" : "pointer",
-                  transition: "all 0.3s ease",
-                  justifyContent: "center",
-                }}
-              >
-                {buttonProps.icon}
-                {buttonProps.text}
-              </button>
-            </div>
-          </div>
+          <ReadingActions
+            userRating={state.userRating}
+            favoriteState={state.favoriteState}
+            onRatingChange={(rating) => updateState({ userRating: rating })}
+            onSaveReading={handleSaveReading}
+          />
         </div>
 
         <CollectionFullModal isOpen={showCollectionFullModal} onClose={() => setShowCollectionFullModal(false)} />
 
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          reading={{
-            spreadType,
-            cards: state.revealedCards.map((card, index) => ({
-              card,
-              position: spreadLayout.positions[index].label,
-              meaning: getCardMeaning(card, card.isReversed),
-              reversed: card.isReversed,
-            })),
-            summary: state.comprehensiveSummary,
-            date: new Date().toLocaleDateString("zh-CN"),
-          }}
-        />
+        {/* 分享入口暂时只保留一个图标占位，不再弹出分享功能 */}
+        <div style={{display:"none"}} />
 
         <style jsx>{`
           @keyframes spin {
@@ -884,366 +690,38 @@ export default function CardReadingPage({ spreadType, onBack }: CardReadingPageP
         />
       </div>
 
-      {/* Card Positions */}
-      <div style={{ padding: "0 30px 4px", position: "relative", zIndex: 15 }}>
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            height: `${Math.max(350, 450 / spreadLayout.containerAspectRatio)}px`,
-            maxWidth: spreadType === "凯尔特十字" ? "450px" : "550px",
-            margin: "0 auto",
-            marginBottom: "12px",
-          }}
-        >
-          {spreadLayout.positions.map((position, index) => {
-            const cardSize = getCardSize(position.size)
-            const isOverlappingCard = spreadType === "凯尔特十字" && position.id === 2
-            const overlayOffset = isOverlappingCard ? { x: 15, y: 10 } : { x: 0, y: 0 }
+      <SpreadCanvas
+        spreadLayout={spreadLayout}
+        spreadType={spreadType}
+        state={state}
+        getCardSize={getCardSize}
+        handleRedrawCard={handleRedrawCard}
+      />
 
-            return (
-              <div
-                key={position.id}
-                style={{
-                  position: "absolute",
-                  left: `calc(${position.x + overlayOffset.x}% - ${cardSize.width / 2}px)`,
-                  top: `calc(${position.y + overlayOffset.y}% - ${cardSize.height / 2}px)`,
-                  textAlign: "center",
-                  animation: `slideInFromTop 0.6s ease-out ${index * 0.1}s both`,
-                  zIndex: isOverlappingCard ? 20 : 15,
-                }}
-              >
-                <div
-                  data-position={position.id}
-                  style={{
-                    width: `${cardSize.width + 4}px`,
-                    height: `${cardSize.height + 4}px`,
-                    borderRadius: "10px",
-                    border: state.placedCards.has(position.id)
-                      ? "2px solid #FFD700"
-                      : "2px dashed rgba(255, 215, 0, 0.4)",
-                    backgroundColor: state.placedCards.has(position.id)
-                      ? "rgba(255, 215, 0, 0.2)"
-                      : "rgba(54, 69, 79, 0.3)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "6px",
-                    padding: "2px",
-                    transition: "all 0.3s ease",
-                    backdropFilter: "blur(10px)",
-                    boxShadow: state.placedCards.has(position.id) ? "0 0 15px rgba(255, 215, 0, 0.4)" : "none",
-                    position: "relative",
-                    transform: isOverlappingCard ? "rotate(90deg)" : "none",
-                  }}
-                  className={state.placedCards.has(position.id) ? "spread-position-filled" : "spread-position-empty"}
-                >
-                  {!state.placedCards.has(position.id) && state.phase === "selecting" && (
-                    <span
-                      style={{
-                        fontSize: position.size === "large" ? "24px" : position.size === "small" ? "16px" : "20px",
-                        fontWeight: "300",
-                        color: "#D4AF37",
-                      }}
-                    >
-                      {position.id}
-                    </span>
-                  )}
-
-                  {state.placedCards.has(position.id) && state.phase === "selecting" && (
-                    <TarotCardImage
-                      width={cardSize.width}
-                      height={cardSize.height}
-                      className="shadow-md"
-                      style={{ transform: isOverlappingCard ? "rotate(-90deg)" : "none" }}
-                    />
-                  )}
-
-                  {state.phase === "revealing" && state.currentRevealIndex > index && (
-                    <TarotCardImage
-                      card={state.revealedCards[index]}
-                      isRevealed={true}
-                      width={cardSize.width}
-                      height={cardSize.height}
-                      className="shadow-md"
-                      style={{ transform: isOverlappingCard ? "rotate(-90deg)" : "none" }}
-                    />
-                  )}
-                </div>
-                <div
-                  style={{
-                    position: "relative",
-                    zIndex: 25,
-                    backgroundColor: "rgba(26, 35, 126, 0.8)",
-                    borderRadius: "6px",
-                    padding: "3px 6px",
-                    marginTop: "4px",
-                    border: "1px solid rgba(255, 215, 0, 0.3)",
-                    minHeight: "24px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#F5F5DC",
-                      fontSize: spreadType === "凯尔特十字" ? "10px" : "11px",
-                      fontWeight: "500",
-                      marginBottom: "2px",
-                      textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-                      lineHeight: "1.2",
-                      textAlign: "center",
-                    }}
-                  >
-                    {position.label}
-                  </p>
-                  {state.placedCards.has(position.id) && state.phase === "selecting" && (
-                    <button
-                      onClick={() => handleRedrawCard(position.id)}
-                      style={{
-                        marginTop: "1px",
-                        padding: "2px 5px",
-                        backgroundColor: "rgba(255, 215, 0, 0.9)",
-                        color: "#1A237E",
-                        border: "none",
-                        borderRadius: "6px",
-                        fontSize: "8px",
-                        fontWeight: "500",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        backdropFilter: "blur(10px)",
-                        boxShadow: "0 1px 6px rgba(0,0,0,0.3)",
-                        lineHeight: "1",
-                      }}
-                      className="micro-interaction"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.05)"
-                        e.currentTarget.style.backgroundColor = "#FFD700"
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)"
-                        e.currentTarget.style.backgroundColor = "rgba(255, 215, 0, 0.9)"
-                      }}
-                    >
-                      重抽
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Selection Progress */}
-        <div style={{ textAlign: "center", marginBottom: "4px", position: "relative", zIndex: 20 }}>
-          <p style={{ color: "#FFD700", fontSize: "14px", fontWeight: "500", marginBottom: "8px" }}>
-            已选择 {state.selectedCards.length}/{totalCards} 张牌
-          </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
-            {Array.from({ length: totalCards }, (_, index) => (
-              <div
-                key={index}
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  backgroundColor: state.selectedCards.length > index ? "#FFD700" : "rgba(212, 175, 55, 0.3)",
-                  transition: "all 0.3s ease",
-                  animation: state.selectedCards.length > index ? "pulse 1s ease-in-out infinite" : "none",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* AI Reading Button */}
-        <div style={{ textAlign: "center", marginBottom: "4px", position: "relative", zIndex: 20 }}>
-          {state.selectedCards.length === totalCards ? (
-            <button
-              onClick={() => {
+      <ReadingProgress
+        selectedCards={state.selectedCards}
+        totalCards={totalCards}
+        phase={state.phase}
+        isLoadingReading={state.isLoadingReading}
+        onStartAIReading={() => {
                 playCardFlipSound()
                 playMysticalSound()
                 startAIReading()
-              }}
-              disabled={state.isLoadingReading}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "10px 20px",
-                backgroundColor: "rgba(255, 215, 0, 0.9)",
-                color: "#1A237E",
-                border: "none",
-                borderRadius: "20px",
-                fontSize: "15px",
-                fontWeight: "600",
-                cursor: "pointer",
-                backdropFilter: "blur(10px)",
-                boxShadow: "0 3px 12px rgba(255, 215, 0, 0.4)",
-                transition: "all 0.3s ease",
-                animation: "aiButtonAppear 0.6s ease-out",
-              }}
-              className="micro-interaction sound-feedback"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)"
-                e.currentTarget.style.boxShadow = "0 4px 16px rgba(255, 215, 0, 0.6)"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)"
-                e.currentTarget.style.boxShadow = "0 3px 12px rgba(255, 215, 0, 0.4)"
-              }}
-            >
-              <Zap size={16} />
-              点击查看牌阵解读
-            </button>
-          ) : (
-            <div
-              style={{
-                display: "inline-block",
-                padding: "6px 16px",
-                backgroundColor: "rgba(255, 215, 0, 0.2)",
-                borderRadius: "16px",
-                backdropFilter: "blur(10px)",
-                animation: "glow 2s ease-in-out infinite alternate",
-                border: "1px solid rgba(255, 215, 0, 0.3)",
-              }}
-            >
-              <p style={{ color: "#FFD700", fontSize: "13px", fontWeight: "500", margin: 0 }}>抽张塔罗吧</p>
-            </div>
-          )}
-        </div>
-
-        {/* Instructions */}
-        <div style={{ textAlign: "center", marginBottom: "6px", position: "relative", zIndex: 5 }}>
-          <p style={{ color: "#D4AF37", fontSize: "12px" }}>
-            {state.selectedCards.length === totalCards
-              ? ""
-              : state.phase === "selecting"
-                ? "左右滑动并根据你的直觉选择，单击即可选中"
-                : "正在为您揭示命运的奥秘..."}
-          </p>
-        </div>
-      </div>
-
-      {/* Card Deck */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "200px",
-          background: "linear-gradient(to top, rgba(26, 35, 126, 0.95) 0%, transparent 100%)",
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "center",
-          paddingBottom: "30px",
-          marginTop: "12px",
-          zIndex: 15,
-          pointerEvents: "none",
         }}
-        className="enhanced-starry-background"
-      >
-        <div style={{ position: "relative", width: "90vw", maxWidth: "700px", height: "160px", pointerEvents: "auto" }}>
-          {state.deckCards.map((cardIndex, index) => {
-            const totalCards = state.deckCards.length
-            const angle = baseAngle + index * angleStep
-            const radius = Math.min(window.innerWidth * 0.32, 160)
-            const x = Math.sin((angle * Math.PI) / 180) * radius
-            const y = Math.cos((angle * Math.PI) / 180) * 35
+      />
 
-            const isSelected = state.selectedCards.includes(cardIndex)
-            const isHovered = state.hoveredCard === cardIndex
+      <CardDeckFan
+        deckCards={state.deckCards}
+        selectedCards={state.selectedCards}
+        hoveredCard={state.hoveredCard}
+        phase={state.phase}
+        baseAngle={baseAngle}
+        angleStep={angleStep}
+        onCardClick={handleCardClick}
+        onCardHover={(cardIndex) => updateState({ hoveredCard: cardIndex })}
+      />
 
-            return (
-              <div
-                key={cardIndex}
-                data-card-index={cardIndex}
-                onClick={() => handleCardClick(cardIndex)}
-                onMouseEnter={() => updateState({ hoveredCard: cardIndex })}
-                onMouseLeave={() => updateState({ hoveredCard: null })}
-                style={{
-                  position: "absolute",
-                  cursor: state.phase === "selecting" ? "pointer" : "default",
-                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-                  left: `calc(50% + ${x}px - 35px)`,
-                  bottom: `${25 + y}px`,
-                  transform: `rotate(${angle}deg) ${isHovered ? "scale(1.08) translateY(-8px)" : ""}`,
-                  zIndex: isHovered ? 30 : 20,
-                  opacity: isSelected ? 0.3 : 0.9,
-                  pointerEvents: state.phase === "selecting" && !isSelected ? "auto" : "none",
-                  filter: isHovered ? "brightness(1.1) drop-shadow(0 0 15px rgba(255, 215, 0, 0.5))" : "none",
-                  overflow: "hidden",
-                }}
-                className="tarot-card-hover"
-              >
-                {/* 流动光线效果 */}
-                {isHovered && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: -100,
-                      width: 100,
-                      height: "100%",
-                      background: "linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent)",
-                      animation: "flowingLight 0.8s ease-out forwards",
-                      zIndex: 2,
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-                {/* 水波纹效果 */}
-                {isHovered && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      width: 0,
-                      height: 0,
-                      background: "radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%)",
-                      borderRadius: "50%",
-                      transform: "translate(-50%, -50%)",
-                      animation: "rippleEffect 0.6s ease-out forwards",
-                      zIndex: 1,
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-                <TarotCardImage 
-                  width={70} 
-                  height={105} 
-                  className={`shadow-lg glow-effect`} 
-                />
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Flying Cards Animation */}
-      {state.flyingCards.map((flyingCard) => (
-        <div
-          key={flyingCard.id}
-          style={{
-            position: "fixed",
-            zIndex: 1000,
-            pointerEvents: "none",
-            animation: `flyToTarget 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
-            "--start-x": `${flyingCard.startX - 35}px`,
-            "--start-y": `${flyingCard.startY - 52}px`,
-            "--target-x": `${flyingCard.targetX - 35}px`,
-            "--target-y": `${flyingCard.targetY - 52}px`,
-          } as React.CSSProperties}
-        >
-          <TarotCardImage 
-            width={70} 
-            height={105} 
-            className="shadow-lg glow-effect" 
-          />
-        </div>
-      ))}
+      <FlyingCardLayer flyingCards={state.flyingCards} />
 
       {/* Animation keyframes */}
       <style jsx>{`

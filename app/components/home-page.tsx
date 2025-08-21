@@ -1,14 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sparkles, Heart, Briefcase, DollarSign, Star, ArrowRight, Crown, Calendar } from "lucide-react"
 import CardReadingPage from "./card-reading-page"
 import TarotCardImage from "./tarot-card-image"
 import { getTarotCard } from "../data/tarot-cards"
 import { MAJOR_ARCANA_BRIEF } from "../data/major-arcana-brief"
 import { useLunarPhase } from "../hooks/use-lunar-phase"
+import { useGoogleAnalytics } from "../hooks/use-google-analytics"
 import CardDetailModal from "./card-detail-modal"
 import dailyQuotes from "../data/daily_quotes.json"
+import { readingCacheManager } from "../utils/reading-cache-manager"
 
 export default function HomePage() {
   const [selectedSpread, setSelectedSpread] = useState<number | null>(null)
@@ -16,6 +18,7 @@ export default function HomePage() {
   const [currentSpread, setCurrentSpread] = useState<string>("")
   const [showDetailModal, setShowDetailModal] = useState(false)
   const lunarPhase = useLunarPhase()
+  const { trackStartReading, isClient } = useGoogleAnalytics()
 
   const dailyCard = (() => {
     const today = new Date()
@@ -63,6 +66,15 @@ export default function HomePage() {
     return dailyQuotes[startIndex];
   }
   const todayQuote = getTodayQuote()
+
+  // 检查是否需要重定向到解读页面
+  useEffect(() => {
+    const { shouldRedirect, spreadType } = readingCacheManager.shouldRedirectToReading()
+    if (shouldRedirect && spreadType) {
+      setCurrentSpread(spreadType)
+      setShowReading(true)
+    }
+  }, [])
 
   const allCardSpreads = [
     {
@@ -120,6 +132,10 @@ export default function HomePage() {
   const handleSpreadClick = (spreadId: number) => {
     const spread = allCardSpreads.find((s) => s.id === spreadId)
     if (spread) {
+      // 只在客户端追踪开始占卜事件
+      if (isClient) {
+        trackStartReading(spread.name)
+      }
       setCurrentSpread(spread.name)
       setShowReading(true)
     }
@@ -129,6 +145,14 @@ export default function HomePage() {
     setShowReading(false)
     setSelectedSpread(null)
     setCurrentSpread("")
+    // 更新缓存，标记用户已返回首页
+    const cached = readingCacheManager.restoreReadingState()
+    if (cached) {
+      readingCacheManager.saveReadingState({
+        ...cached,
+        currentPage: "home",
+      })
+    }
   }
 
   const getDifficultyColor = (difficulty: string) => {
@@ -169,7 +193,7 @@ export default function HomePage() {
     <div style={{ paddingBottom: "120px", minHeight: "100vh", overflowY: "auto" }}>
       {/* Welcome Section - 移动端优化 */}
       <div style={{ textAlign: "center", padding: "16px 0 0 0" }}>
-        <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>抽张塔罗吧</h1>
+        <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700", marginBottom: "8px" }}>开始你的在线塔罗占卜</h1>
         <div style={{ fontStyle: "italic", color: "#D4AF37", fontSize: "13px", lineHeight: 1.4, maxWidth: 360, margin: "0 auto 8px auto", textAlign: "center", padding: "0 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {todayQuote.quote}
         </div>

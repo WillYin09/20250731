@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useRef } from "react"
 import { getRandomTarotCards, getCardMeaning, type TarotCardData, type TarotCardWithOrientation } from "../data/tarot-cards"
 import { getSpreadLayout } from "../data/spread-layouts"
-import { getBriefCardMeaning, generateConciseSummary } from "../utils/text-processing"
+import { generateConciseSummary } from "../utils/text-processing"
 
 export interface FlyingCard {
   id: number
@@ -65,7 +65,7 @@ export function useCardReading(spreadType: string) {
     return state.revealedCards.map((card, index) => ({
       ...card,
       meaning: getCardMeaning(card, card.isReversed),
-      description: card.description || card.description,
+      description: card.description,
       index,
       // 添加缓存标记
       cached: true,
@@ -112,6 +112,16 @@ export function useCardReading(spreadType: string) {
           comprehensiveSummary: data.text,
           isLoadingReading: false,
         })
+        
+        // 追踪完成解读事件 - 只在客户端执行
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'complete_reading', {
+            event_category: 'tarot_app',
+            spread_type: spreadType,
+            card_count: cardsToUse.length,
+            event_label: '完成解读',
+          })
+        }
       } else {
         throw new Error(data.error || "解读生成失败")
       }
@@ -197,6 +207,17 @@ export function useCardReading(spreadType: string) {
       }
 
       isProcessingRef.current = true
+
+      // 追踪抽牌事件
+      if (typeof window !== 'undefined' && window.gtag) {
+        const card = getRandomTarotCards(1)[0]
+        window.gtag('event', 'draw_card', {
+          event_category: 'tarot_app',
+          card_name: card.name,
+          position: targetPosition,
+          event_label: '抽牌',
+        })
+      }
 
       // 设置动画完成的回调
       animationTimeoutRef.current = setTimeout(() => {
